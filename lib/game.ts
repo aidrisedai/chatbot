@@ -110,7 +110,8 @@ export function applyAnswer(
   state: GameState,
   track: string,
   correct: boolean,
-  roll: number // a 0..1 random value, injected so the caller controls randomness
+  roll: number, // a 0..1 random value, injected so the caller controls randomness
+  weight = 1 // harder challenges (write_code, mini_project) award more
 ): GameState {
   const t = state.tracks[track] || EMPTY_TRACK;
   let { coins, lives } = state;
@@ -121,9 +122,9 @@ export function applyAnswer(
   const nt: TrackProgress = { ...t };
 
   if (correct) {
-    const xpGain = Math.round(BASE_XP * mult);
+    const xpGain = Math.round(BASE_XP * mult * weight);
     const baseCoins = 1 + Math.floor(roll * 2); // 1 or 2
-    const coinGain = Math.round(baseCoins * mult);
+    const coinGain = Math.round(baseCoins * mult * weight);
 
     nt.streak = t.streak + 1;
     nt.bestStreak = Math.max(t.bestStreak, nt.streak);

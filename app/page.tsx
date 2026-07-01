@@ -6,7 +6,7 @@ import { Shop } from "@/components/Shop";
 import { DailyGoals } from "@/components/DailyGoals";
 import { Avatar } from "@/components/Avatar";
 import { Closet } from "@/components/Closet";
-import type { Challenge } from "@/lib/types";
+import type { Challenge, GradeResult } from "@/lib/types";
 import { defaultAvatar, type AvatarItem } from "@/lib/avatar";
 import { playSound, setMuted } from "@/lib/sound";
 import {
@@ -30,6 +30,21 @@ const TRACKS = [
 ];
 
 const STORAGE_KEY = "codequest:v2";
+
+// Harder, open-ended challenges award more XP/coins.
+function weightFor(type: Challenge["type"]) {
+  if (type === "mini_project") return 3;
+  if (type === "write_code") return 2;
+  return 1;
+}
+
+// Pick what kind of challenge to request. Advanced types unlock with level and
+// appear occasionally so the pace stays snappy.
+function pickKind(level: number, roll: number): string {
+  if (level >= 5 && roll < 0.12) return "mini_project";
+  if (level >= 3 && roll < 0.32) return "write_code";
+  return "quick";
+}
 
 export default function Home() {
   const [state, setState] = useState<GameState>(defaultState);
@@ -90,7 +105,12 @@ export default function Home() {
         const res = await fetch("/api/challenge", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ track: activeTrack, level: forLevel, recent }),
+          body: JSON.stringify({
+            track: activeTrack,
+            level: forLevel,
+            recent,
+            kind: pickKind(forLevel, Math.random()),
+          }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Request failed.");
@@ -127,12 +147,52 @@ export default function Home() {
 
   function handleResult(correct: boolean) {
     if (!track) return;
+    const weight = challenge ? weightFor(challenge.type) : 1;
     const before = state.tracks[track] || EMPTY_TRACK;
-    const next = applyAnswer(state, track, correct, Math.random());
+    const next = applyAnswer(state, track, correct, Math.random(), weight);
     setState(next);
     const after = next.tracks[track];
     if (correct) playSound(after.level > before.level ? "levelUp" : "correct");
     else playSound("wrong");
+  }
+
+  // Grade an open-ended (write_code / mini_project) submission with the AI.
+  async function gradeCode(userCode: string): Promise<GradeResult> {
+    if (!challenge) return { pass: false, feedback: "No challenge loaded." };
+    try {
+      const res = await fetch("/api/grade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          language: challenge.language,
+          prompt: challenge.prompt,
+          checks: challenge.checks,
+          starter: challenge.code,
+          code: userCode,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Grading failed.");
+      return { pass: data.pass === true, feedback: String(data.feedback || "") };
+    } catch (err) {
+      return {
+        pass: false,
+        feedback: err instanceof Error ? err.message : "Grading failed. Try again.",
+      };
+    }
+  }
+
+  // Skipping an open challenge: no life lost, but the streak resets.
+  function skipOpen() {
+    if (!track) return;
+    playSound("click");
+    setState((s) => ({
+      ...s,
+      tracks: {
+        ...s.tracks,
+        [track]: { ...(s.tracks[track] || EMPTY_TRACK), streak: 0 },
+      },
+    }));
   }
 
   function handleNext() {
@@ -365,6 +425,8 @@ export default function Home() {
             challenge={challenge}
             onResult={handleResult}
             onNext={handleNext}
+            onGrade={gradeCode}
+            onSkip={skipOpen}
           />
         )}
       </div>

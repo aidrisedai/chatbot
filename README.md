@@ -16,6 +16,12 @@ so you never run out.
 | 🖨️ Predict output   | Read a tiny program and guess what it prints.           |
 | ✍️ Fill in the blank | Type the missing token to complete the code.            |
 | 🐞 Find the error    | Click the one buggy line in a short program.            |
+| ✍️ Write the code     | Complete a few missing lines — the AI grades it. (Lv 3) |
+| 🛠️ Mini project      | Build a tiny program from a prompt — AI-graded. (Lv 5)  |
+
+The last two are open-ended: you write real code in an editor and Claude grades
+it, giving short feedback. They unlock as you level up, are penalty-free (no life
+lost — revise and resubmit), and award extra XP and coins.
 
 Each challenge opens with a tiny micro-lesson (one line + a small example), then
 the interactive part. Pick a track (Python, JavaScript, HTML & CSS, or "Surprise

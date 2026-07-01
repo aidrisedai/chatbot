@@ -56,6 +56,10 @@ export async function POST(req: Request) {
   const recent = Array.isArray(body.recent)
     ? body.recent.filter((r): r is string => typeof r === "string").slice(-10)
     : [];
+  const kind =
+    typeof (body as { kind?: unknown }).kind === "string"
+      ? ((body as { kind: string }).kind)
+      : "quick";
 
   const client = new Anthropic();
 
@@ -65,7 +69,7 @@ export async function POST(req: Request) {
       max_tokens: 1024,
       system: CHALLENGE_SYSTEM,
       messages: [
-        { role: "user", content: buildChallengeRequest(track, level, recent) },
+        { role: "user", content: buildChallengeRequest(track, level, recent, kind) },
       ],
     });
 

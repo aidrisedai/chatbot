@@ -2,7 +2,9 @@ export type ChallengeType =
   | "multiple_choice"
   | "predict_output"
   | "fill_blank"
-  | "find_error";
+  | "find_error"
+  | "write_code"
+  | "mini_project";
 
 export interface Challenge {
   type: ChallengeType;
@@ -16,6 +18,13 @@ export interface Challenge {
   answer: string;
   explanation: string;
   concept: string;
+  checks: string[];
+  solution: string;
+}
+
+export interface GradeResult {
+  pass: boolean;
+  feedback: string;
 }
 
 export const CHALLENGE_TYPES: ChallengeType[] = [
@@ -23,7 +32,16 @@ export const CHALLENGE_TYPES: ChallengeType[] = [
   "predict_output",
   "fill_blank",
   "find_error",
+  "write_code",
+  "mini_project",
 ];
+
+// Open-ended challenges: the learner writes code that the AI grades.
+export const OPEN_TYPES: ChallengeType[] = ["write_code", "mini_project"];
+
+export function isOpen(type: ChallengeType): boolean {
+  return OPEN_TYPES.includes(type);
+}
 
 export function isChallenge(value: unknown): value is Challenge {
   if (!value || typeof value !== "object") return false;
@@ -41,6 +59,9 @@ export function isChallenge(value: unknown): value is Challenge {
     c.options.every((o) => typeof o === "string") &&
     typeof c.answer === "string" &&
     typeof c.explanation === "string" &&
-    typeof c.concept === "string"
+    typeof c.concept === "string" &&
+    Array.isArray(c.checks) &&
+    c.checks.every((o) => typeof o === "string") &&
+    typeof c.solution === "string"
   );
 }
