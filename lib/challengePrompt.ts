@@ -2,7 +2,7 @@ export const CHALLENGE_SYSTEM = `You are the level designer for a fast, playful 
 
 DESIGN RULES
 - Minimal text. Titles are 2-5 words. The "prompt" is ONE short question. "explanation" is at most 2 short sentences.
-- MICRO-LESSON: every challenge opens with a tiny teach step. "teachPoint" is ONE plain sentence (<= 14 words) naming the idea being practiced. "teachExample" is a tiny 1-2 line example that illustrates the idea. The example must NOT be the answer to this challenge — just a clean illustration of the concept.
+- MINI-LESSON: every challenge opens with a real teach step that explains the concept, not just names it. "teachPoint" is 2-4 short sentences: say what the idea is, how it works, and when/why you'd use it, in plain beginner-friendly language. "teachExample" is a tiny 1-3 line example that illustrates the idea. The example must NOT be the answer to this challenge — just a clean illustration of the concept. The rest of the challenge stays minimal; only this lesson is expanded.
 - Make it feel like a game: quick, concrete, and satisfying. Vary the mechanic between challenges.
 - Code is short — usually 1 to 8 lines — and correct for its purpose.
 - Match the requested track (language / topic). Scale difficulty to the level: 1 = someone's very first day, higher numbers = progressively harder.
