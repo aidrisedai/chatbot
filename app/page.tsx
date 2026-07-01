@@ -2,7 +2,21 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ChallengeCard } from "@/components/ChallengeCard";
+import { Shop } from "@/components/Shop";
+import { DailyGoals } from "@/components/DailyGoals";
 import type { Challenge } from "@/lib/types";
+import {
+  applyAnswer,
+  BOOST_DURATION,
+  defaultState,
+  EMPTY_TRACK,
+  ensureToday,
+  LIFE_COST,
+  MAX_LIVES,
+  START_LIVES,
+  xpToNext,
+  type GameState,
+} from "@/lib/game";
 
 const TRACKS = [
   { label: "Python", value: "Python for beginners", emoji: "🐍" },
@@ -11,31 +25,10 @@ const TRACKS = [
   { label: "Surprise me", value: "a surprise mix of beginner-friendly coding topics", emoji: "🎲" },
 ];
 
-const STORAGE_KEY = "codequest:v1";
-
-type Progress = {
-  score: number;
-  streak: number;
-  bestStreak: number;
-  solved: number;
-  recent: string[];
-};
-
-const EMPTY: Progress = {
-  score: 0,
-  streak: 0,
-  bestStreak: 0,
-  solved: 0,
-  recent: [],
-};
-
-function levelFor(solved: number) {
-  return 1 + Math.floor(solved / 3);
-}
+const STORAGE_KEY = "codequest:v2";
 
 export default function Home() {
-  // Per-track saved progress, persisted to localStorage.
-  const [allProgress, setAllProgress] = useState<Record<string, Progress>>({});
+  const [state, setState] = useState<GameState>(defaultState);
   const [hydrated, setHydrated] = useState(false);
 
   const [track, setTrack] = useState<string | null>(null);
@@ -43,30 +36,36 @@ export default function Home() {
   const [challengeId, setChallengeId] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shopOpen, setShopOpen] = useState(false);
 
-  // Load saved progress once on mount.
+  // Load saved state once.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setAllProgress(JSON.parse(raw));
+      if (raw) {
+        const parsed = JSON.parse(raw) as GameState;
+        setState({ ...defaultState(), ...parsed, daily: ensureToday(parsed.daily) });
+      }
     } catch {
       /* ignore corrupt storage */
     }
     setHydrated(true);
   }, []);
 
-  // Save whenever progress changes (after the initial load).
+  // Persist on change.
   useEffect(() => {
     if (!hydrated) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(allProgress));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
       /* storage may be unavailable */
     }
-  }, [allProgress, hydrated]);
+  }, [state, hydrated]);
 
-  const current: Progress = (track && allProgress[track]) || EMPTY;
-  const level = levelFor(current.solved);
+  const cur = (track && state.tracks[track]) || EMPTY_TRACK;
+  const need = xpToNext(cur.level);
+  const xpPct = Math.min(100, Math.round((cur.xp / need) * 100));
+  const outOfLives = !!track && state.lives <= 0;
 
   const loadNext = useCallback(
     async (activeTrack: string, forLevel: number, recent: string[]) => {
@@ -83,11 +82,14 @@ export default function Home() {
         const c = data as Challenge;
         setChallenge(c);
         setChallengeId((id) => id + 1);
-        setAllProgress((prev) => {
-          const p = prev[activeTrack] || EMPTY;
+        setState((prev) => {
+          const p = prev.tracks[activeTrack] || EMPTY_TRACK;
           return {
             ...prev,
-            [activeTrack]: { ...p, recent: [...p.recent, c.concept].slice(-10) },
+            tracks: {
+              ...prev.tracks,
+              [activeTrack]: { ...p, recent: [...p.recent, c.concept].slice(-10) },
+            },
           };
         });
       } catch (err) {
@@ -100,47 +102,70 @@ export default function Home() {
   );
 
   function start(value: string) {
-    // Resume saved progress for this track (do NOT reset it).
-    const saved = allProgress[value] || EMPTY;
     setTrack(value);
     setChallenge(null);
     setError(null);
-    loadNext(value, levelFor(saved.solved), saved.recent);
+    setState((s) => ({ ...s, daily: ensureToday(s.daily) }));
+    const saved = state.tracks[value] || EMPTY_TRACK;
+    if (state.lives > 0) loadNext(value, saved.level, saved.recent);
   }
 
   function handleResult(correct: boolean) {
     if (!track) return;
-    setAllProgress((prev) => {
-      const p = prev[track] || EMPTY;
-      if (correct) {
-        const bonus = 10 + p.streak * 2; // streak makes each win worth more
-        const streak = p.streak + 1;
-        return {
-          ...prev,
-          [track]: {
-            ...p,
-            score: p.score + bonus,
-            streak,
-            bestStreak: Math.max(p.bestStreak, streak),
-            solved: p.solved + 1,
-          },
-        };
-      }
-      return { ...prev, [track]: { ...p, streak: 0 } };
-    });
+    setState((s) => applyAnswer(s, track, correct, Math.random()));
   }
 
   function handleNext() {
-    if (track) loadNext(track, level, current.recent);
+    if (!track || state.lives <= 0) return; // out-of-lives overlay handles it
+    loadNext(track, cur.level, cur.recent);
   }
 
   function backToMenu() {
     setTrack(null);
     setChallenge(null);
     setError(null);
+    setShopOpen(false);
   }
 
-  // ---- Track picker ----
+  // Shop / revive actions
+  function buyLife() {
+    setState((s) =>
+      s.coins >= LIFE_COST && s.lives < MAX_LIVES
+        ? { ...s, coins: s.coins - LIFE_COST, lives: s.lives + 1 }
+        : s
+    );
+  }
+
+  function buyBoost(mult: number) {
+    const item = { 1.5: 30, 2: 60, 3: 120 }[mult as 1.5 | 2 | 3];
+    if (item == null) return;
+    setState((s) =>
+      s.coins >= item
+        ? { ...s, coins: s.coins - item, boost: { mult, remaining: BOOST_DURATION } }
+        : s
+    );
+  }
+
+  function reviveWithCoins() {
+    if (!track || state.coins < LIFE_COST) return;
+    setState((s) => ({ ...s, coins: s.coins - LIFE_COST, lives: s.lives + 1 }));
+    loadNext(track, cur.level, cur.recent);
+  }
+
+  function reviveFree() {
+    if (!track) return;
+    setState((s) => ({
+      ...s,
+      lives: START_LIVES,
+      tracks: {
+        ...s.tracks,
+        [track]: { ...(s.tracks[track] || EMPTY_TRACK), streak: 0 },
+      },
+    }));
+    loadNext(track, cur.level, cur.recent);
+  }
+
+  // ---- Track picker (home) ----
   if (!track) {
     return (
       <main className="game">
@@ -148,18 +173,31 @@ export default function Home() {
           <div className="menu-logo">🎮</div>
           <h1>CodeQuest</h1>
           <p className="tagline">
-            Learn to code by playing. Tiny challenges, instant feedback, real skills.
+            Learn to code by playing. Earn XP, coins, and level up.
           </p>
+
+          <div className="wallet-line big">
+            <span className="chip">🪙 {state.coins}</span>
+            <span className="chip">❤️ {state.lives}</span>
+            {state.boost && (
+              <span className="chip boost">
+                ⚡ {state.boost.mult}× · {state.boost.remaining}
+              </span>
+            )}
+          </div>
+
+          <DailyGoals daily={ensureToday(state.daily)} />
+
           <div className="track-grid">
             {TRACKS.map((t) => {
-              const saved = allProgress[t.value];
+              const saved = state.tracks[t.value];
               return (
                 <button key={t.value} className="track" onClick={() => start(t.value)}>
                   <span className="track-emoji">{t.emoji}</span>
                   <span className="track-label">{t.label}</span>
                   {saved && saved.solved > 0 && (
                     <span className="track-save">
-                      Lv {levelFor(saved.solved)} · ⭐ {saved.score}
+                      Lv {saved.level} · {saved.solved} solved
                     </span>
                   )}
                 </button>
@@ -175,19 +213,35 @@ export default function Home() {
   return (
     <main className="game">
       <header className="hud">
-        <button className="back" onClick={backToMenu} title="Change track (progress is saved)">
-          ← Menu
-        </button>
-        <div className="stats">
-          <span className="stat" title="Score">
-            ⭐ {current.score}
-          </span>
-          <span className="stat" title="Streak">
-            🔥 {current.streak}
-          </span>
-          <span className="stat" title="Level">
-            📈 Lv {level}
-          </span>
+        <div className="hud-row">
+          <button className="back" onClick={backToMenu} title="Progress is saved">
+            ← Menu
+          </button>
+          <div className="wallet">
+            <span className="chip">🪙 {state.coins}</span>
+            <span className="chip">❤️ {state.lives}</span>
+            <span className="chip">🔥 {cur.streak}</span>
+            {state.boost && (
+              <span className="chip boost">
+                ⚡ {state.boost.mult}× · {state.boost.remaining}
+              </span>
+            )}
+            <button className="shop-btn" onClick={() => setShopOpen(true)}>
+              🛒
+            </button>
+          </div>
+        </div>
+
+        <div className="xp">
+          <div className="xp-top">
+            <span>📈 Level {cur.level}</span>
+            <span>
+              {cur.xp} / {need} XP
+            </span>
+          </div>
+          <div className="xp-track">
+            <div className="xp-fill" style={{ width: `${xpPct}%` }} />
+          </div>
         </div>
       </header>
 
@@ -219,8 +273,45 @@ export default function Home() {
       </div>
 
       <footer className="foot">
-        Best streak: 🔥 {current.bestStreak} · Solved: {current.solved} · progress saves automatically
+        Best streak: 🔥 {cur.bestStreak} · Solved: {cur.solved} · progress saves automatically
       </footer>
+
+      {shopOpen && (
+        <Shop
+          coins={state.coins}
+          lives={state.lives}
+          onBuyLife={buyLife}
+          onBuyBoost={buyBoost}
+          onClose={() => setShopOpen(false)}
+        />
+      )}
+
+      {outOfLives && !shopOpen && (
+        <div className="modal-backdrop">
+          <div className="modal">
+            <div className="modal-head">
+              <h3>💔 Out of lives</h3>
+            </div>
+            <p className="oo-text">
+              You&apos;re at 0 ❤️. Buy a life to keep your 🔥 {cur.streak} streak, or
+              start fresh.
+            </p>
+            <div className="wallet-line">
+              <span className="chip">🪙 {state.coins}</span>
+            </div>
+            <button
+              className="buy wide"
+              disabled={state.coins < LIFE_COST}
+              onClick={reviveWithCoins}
+            >
+              ❤️ Buy a life — {LIFE_COST} 🪙
+            </button>
+            <button className="ghost wide" onClick={reviveFree}>
+              Start fresh (reset to {START_LIVES} ❤️, lose streak)
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -17,9 +17,22 @@ so you never run out.
 | ✍️ Fill in the blank | Type the missing token to complete the code.            |
 | 🐞 Find the error    | Click the one buggy line in a short program.            |
 
-Pick a track (Python, JavaScript, HTML & CSS, or "Surprise me"), then play. Get it
-right and your streak — and your points — grow. Miss one and you see the answer
-plus a one-line explanation before the next challenge.
+Each challenge opens with a tiny micro-lesson (one line + a small example), then
+the interactive part. Pick a track (Python, JavaScript, HTML & CSS, or "Surprise
+me") and play — miss one and you see the answer plus a one-line explanation.
+
+## Progression & rewards
+
+- **XP + levels** — every correct answer earns XP; fill the bar to level up. Each
+  level needs a little more XP than the last. Levels are tracked per language.
+- **Coins** — earn 1–2 coins per correct answer and a bigger bonus each level-up.
+- **Lives** — you start with 3 ❤️. A wrong answer costs a life; run out and you
+  either spend coins to revive (keeping your streak) or start fresh.
+- **Shop** — spend coins on extra lives, or on ⚡ boosts that multiply the XP and
+  coins you earn (1.5× / 2× / 3×) for your next several challenges.
+- **Daily goals** — small targets that reset each day and pay out coins.
+- Everything (level, XP, coins, lives, boosts, daily goals) **saves automatically**
+  in your browser.
 
 ## Getting started
 
