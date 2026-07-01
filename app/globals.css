@@ -386,6 +386,40 @@ code,
   transition: width 0.4s ease;
 }
 
+/* Practice bar */
+.practice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.practice-label {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.mini-mode {
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mini-mode:not(:disabled):hover {
+  border-color: var(--accent);
+}
+
+.mini-mode:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Daily goals */
 .daily {
   background: var(--card);

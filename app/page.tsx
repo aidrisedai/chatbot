@@ -40,9 +40,12 @@ function weightFor(type: Challenge["type"]) {
 
 // Pick what kind of challenge to request. Advanced types unlock with level and
 // appear occasionally so the pace stays snappy.
+const WRITE_UNLOCK = 2;
+const PROJECT_UNLOCK = 3;
+
 function pickKind(level: number, roll: number): string {
-  if (level >= 5 && roll < 0.12) return "mini_project";
-  if (level >= 3 && roll < 0.32) return "write_code";
+  if (level >= PROJECT_UNLOCK && roll < 0.16) return "mini_project";
+  if (level >= WRITE_UNLOCK && roll < 0.42) return "write_code";
   return "quick";
 }
 
@@ -98,7 +101,12 @@ export default function Home() {
   const outOfLives = !!track && state.lives <= 0;
 
   const loadNext = useCallback(
-    async (activeTrack: string, forLevel: number, recent: string[]) => {
+    async (
+      activeTrack: string,
+      forLevel: number,
+      recent: string[],
+      forcedKind?: string
+    ) => {
       setLoading(true);
       setError(null);
       try {
@@ -109,7 +117,7 @@ export default function Home() {
             track: activeTrack,
             level: forLevel,
             recent,
-            kind: pickKind(forLevel, Math.random()),
+            kind: forcedKind ?? pickKind(forLevel, Math.random()),
           }),
         });
         const data = await res.json();
@@ -199,6 +207,13 @@ export default function Home() {
     if (!track || state.lives <= 0) return; // out-of-lives overlay handles it
     playSound("click");
     loadNext(track, cur.level, cur.recent);
+  }
+
+  // Jump straight to a chosen challenge kind (once unlocked).
+  function requestKind(kind: string) {
+    if (!track || loading) return;
+    playSound("click");
+    loadNext(track, cur.level, cur.recent, kind);
   }
 
   function toggleMute() {
@@ -399,6 +414,26 @@ export default function Home() {
           <div className="xp-track">
             <div className="xp-fill" style={{ width: `${xpPct}%` }} />
           </div>
+        </div>
+
+        <div className="practice">
+          <span className="practice-label">Practice:</span>
+          <button
+            className="mini-mode"
+            disabled={cur.level < WRITE_UNLOCK || loading}
+            onClick={() => requestKind("write_code")}
+          >
+            {cur.level < WRITE_UNLOCK ? `🔒 ✍️ Lv${WRITE_UNLOCK}` : "✍️ Write code"}
+          </button>
+          <button
+            className="mini-mode"
+            disabled={cur.level < PROJECT_UNLOCK || loading}
+            onClick={() => requestKind("mini_project")}
+          >
+            {cur.level < PROJECT_UNLOCK
+              ? `🔒 🛠️ Lv${PROJECT_UNLOCK}`
+              : "🛠️ Mini project"}
+          </button>
         </div>
       </header>
 
