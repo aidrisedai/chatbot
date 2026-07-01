@@ -31,6 +31,9 @@ me") and play — miss one and you see the answer plus a one-line explanation.
 - **Shop** — spend coins on extra lives, or on ⚡ boosts that multiply the XP and
   coins you earn (1.5× / 2× / 3×) for your next several challenges.
 - **Daily goals** — small targets that reset each day and pay out coins.
+- **Avatar** — a customizable character (drawn in code, no image assets). Spend
+  coins in the closet to unlock skins, hair styles & colors, tops, bottoms,
+  glasses, wings, and backgrounds, then mix and match. Skin tones are free.
 - Everything (level, XP, coins, lives, boosts, daily goals) **saves automatically**
   in your browser.
 

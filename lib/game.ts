@@ -1,3 +1,5 @@
+import { defaultAvatar, type AvatarConfig } from "./avatar";
+
 // ---- Economy constants ----
 export const START_LIVES = 3;
 export const MAX_LIVES = 5;
@@ -48,6 +50,7 @@ export type GameState = {
   boost: Boost;
   daily: Daily;
   tracks: Record<string, TrackProgress>;
+  avatar: AvatarConfig;
 };
 
 export const DAILY_GOALS: {
@@ -83,6 +86,7 @@ export function defaultState(): GameState {
     boost: null,
     daily: freshDaily(),
     tracks: {},
+    avatar: defaultAvatar(),
   };
 }
 
@@ -165,5 +169,6 @@ export function applyAnswer(
     boost,
     daily,
     tracks: { ...state.tracks, [track]: nt },
+    avatar: state.avatar,
   };
 }

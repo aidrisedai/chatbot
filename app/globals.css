@@ -160,6 +160,155 @@ code,
   gap: 8px;
 }
 
+.hud-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Avatar frames */
+.avatar-frame {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--card-edge);
+  line-height: 0;
+  background: var(--card);
+}
+
+.avatar-frame.lg {
+  border-radius: 20px;
+}
+
+.avatar-frame.sm {
+  border-radius: 12px;
+}
+
+.menu-avatar {
+  display: inline-block;
+  margin-bottom: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+.hud-avatar {
+  padding: 0;
+  cursor: pointer;
+  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+}
+
+.hud-avatar:hover {
+  border-color: var(--accent);
+}
+
+.customize {
+  padding: 9px 16px;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+/* Closet */
+.modal.closet {
+  max-width: 440px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.closet-preview {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.tab {
+  flex-shrink: 0;
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tab.active {
+  background: var(--pick);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.item {
+  background: var(--card);
+  border: 1px solid var(--card-edge);
+  border-radius: 12px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.item.equipped {
+  border-color: var(--accent2);
+}
+
+.item-name {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.item-btn {
+  width: 100%;
+  background: var(--accent);
+  color: #0b1020;
+  border: none;
+  border-radius: 8px;
+  padding: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.item-btn.equip {
+  background: var(--pick);
+  color: var(--text);
+}
+
+.item-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.item-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px;
+}
+
+.item-badge.on {
+  color: var(--accent2);
+}
+
 .wallet,
 .wallet-line {
   display: flex;

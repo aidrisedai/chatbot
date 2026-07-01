@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { ChallengeCard } from "@/components/ChallengeCard";
 import { Shop } from "@/components/Shop";
 import { DailyGoals } from "@/components/DailyGoals";
+import { Avatar } from "@/components/Avatar";
+import { Closet } from "@/components/Closet";
 import type { Challenge } from "@/lib/types";
+import { defaultAvatar, type AvatarItem } from "@/lib/avatar";
 import {
   applyAnswer,
   BOOST_DURATION,
@@ -37,6 +40,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
+  const [closetOpen, setClosetOpen] = useState(false);
 
   // Load saved state once.
   useEffect(() => {
@@ -44,7 +48,12 @@ export default function Home() {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as GameState;
-        setState({ ...defaultState(), ...parsed, daily: ensureToday(parsed.daily) });
+        setState({
+          ...defaultState(),
+          ...parsed,
+          daily: ensureToday(parsed.daily),
+          avatar: parsed.avatar ?? defaultAvatar(),
+        });
       }
     } catch {
       /* ignore corrupt storage */
@@ -152,6 +161,51 @@ export default function Home() {
     loadNext(track, cur.level, cur.recent);
   }
 
+  // Avatar: buy (then equip) or just equip.
+  function buyAvatar(item: AvatarItem) {
+    setState((s) => {
+      if (s.avatar.owned.includes(item.id)) {
+        return {
+          ...s,
+          avatar: {
+            ...s.avatar,
+            equipped: { ...s.avatar.equipped, [item.category]: item.id },
+          },
+        };
+      }
+      if (s.coins < item.cost) return s;
+      return {
+        ...s,
+        coins: s.coins - item.cost,
+        avatar: {
+          owned: [...s.avatar.owned, item.id],
+          equipped: { ...s.avatar.equipped, [item.category]: item.id },
+        },
+      };
+    });
+  }
+
+  function equipAvatar(item: AvatarItem) {
+    setState((s) => ({
+      ...s,
+      avatar: {
+        ...s.avatar,
+        equipped: { ...s.avatar.equipped, [item.category]: item.id },
+      },
+    }));
+  }
+
+  const closetModal = closetOpen && (
+    <Closet
+      coins={state.coins}
+      equipped={state.avatar.equipped}
+      owned={state.avatar.owned}
+      onBuy={buyAvatar}
+      onEquip={equipAvatar}
+      onClose={() => setClosetOpen(false)}
+    />
+  );
+
   function reviveFree() {
     if (!track) return;
     setState((s) => ({
@@ -170,11 +224,17 @@ export default function Home() {
     return (
       <main className="game">
         <div className="menu">
-          <div className="menu-logo">🎮</div>
+          <div className="avatar-frame lg menu-avatar">
+            <Avatar equipped={state.avatar.equipped} size={120} />
+          </div>
           <h1>CodeQuest</h1>
           <p className="tagline">
             Learn to code by playing. Earn XP, coins, and level up.
           </p>
+
+          <button className="ghost customize" onClick={() => setClosetOpen(true)}>
+            🎨 Customize avatar
+          </button>
 
           <div className="wallet-line big">
             <span className="chip">🪙 {state.coins}</span>
@@ -205,6 +265,7 @@ export default function Home() {
             })}
           </div>
         </div>
+        {closetModal}
       </main>
     );
   }
@@ -214,9 +275,18 @@ export default function Home() {
     <main className="game">
       <header className="hud">
         <div className="hud-row">
-          <button className="back" onClick={backToMenu} title="Progress is saved">
-            ← Menu
-          </button>
+          <div className="hud-left">
+            <button className="back" onClick={backToMenu} title="Progress is saved">
+              ← Menu
+            </button>
+            <button
+              className="avatar-frame hud-avatar"
+              onClick={() => setClosetOpen(true)}
+              title="Customize avatar"
+            >
+              <Avatar equipped={state.avatar.equipped} size={34} />
+            </button>
+          </div>
           <div className="wallet">
             <span className="chip">🪙 {state.coins}</span>
             <span className="chip">❤️ {state.lives}</span>
@@ -275,6 +345,8 @@ export default function Home() {
       <footer className="foot">
         Best streak: 🔥 {cur.bestStreak} · Solved: {cur.solved} · progress saves automatically
       </footer>
+
+      {closetModal}
 
       {shopOpen && (
         <Shop
