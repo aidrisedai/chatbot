@@ -64,6 +64,22 @@ export function ChallengeCard({
         <span className="badge type">{challenge.type.replace("_", " ")}</span>
       </div>
 
+      {(challenge.teachPoint || challenge.teachExample) && (
+        <div className="learn">
+          <span className="learn-tag">💡</span>
+          <div className="learn-body">
+            {challenge.teachPoint && (
+              <div className="learn-point">{challenge.teachPoint}</div>
+            )}
+            {challenge.teachExample && (
+              <pre className="learn-ex">
+                <code>{challenge.teachExample.replace(/\n+$/, "")}</code>
+              </pre>
+            )}
+          </div>
+        </div>
+      )}
+
       <h2 className="card-title">{challenge.title}</h2>
       <p className="card-prompt">{challenge.prompt}</p>
 

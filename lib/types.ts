@@ -8,6 +8,8 @@ export interface Challenge {
   type: ChallengeType;
   language: string;
   title: string;
+  teachPoint: string;
+  teachExample: string;
   prompt: string;
   code: string;
   options: string[];
@@ -31,6 +33,8 @@ export function isChallenge(value: unknown): value is Challenge {
     (CHALLENGE_TYPES as string[]).includes(c.type) &&
     typeof c.language === "string" &&
     typeof c.title === "string" &&
+    typeof c.teachPoint === "string" &&
+    typeof c.teachExample === "string" &&
     typeof c.prompt === "string" &&
     typeof c.code === "string" &&
     Array.isArray(c.options) &&
