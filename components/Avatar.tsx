@@ -81,28 +81,88 @@ export function Avatar({
       [[5, 5], [24, 7], [9, 25], [27, 20], [16, 3], [22, 27], [11, 12], [28, 10]] as const
     ).forEach(([x, y]) => bgCells.push({ x, y, c: "#ffffff" }));
 
-  // ---- Wings (behind body, mirrored) — large ----
-  const wingList: Cell[] = [];
-  const w = (x: number, y: number, c: string) => wingList.push({ x, y, c });
-  if (wings === "angel") {
-    const col = "#eef2ff";
-    [[8, 11], [7, 12], [8, 12], [6, 13], [7, 13], [8, 13], [5, 14], [6, 14], [7, 14], [8, 14], [4, 15], [5, 15], [6, 15], [7, 15], [8, 15], [3, 16], [4, 16], [5, 16], [6, 16], [7, 16], [8, 16], [2, 17], [3, 17], [4, 17], [5, 17], [6, 17], [7, 17], [8, 17], [1, 18], [2, 18], [3, 18], [4, 18], [5, 18], [6, 18], [7, 18], [8, 18], [2, 19], [3, 19], [4, 19], [5, 19], [6, 19], [7, 19], [8, 19], [3, 20], [4, 20], [5, 20], [6, 20], [7, 20], [8, 20], [4, 21], [5, 21], [6, 21], [7, 21], [8, 21], [5, 22], [6, 22], [7, 22], [8, 22], [6, 23], [7, 23], [8, 23], [7, 24], [8, 24]].forEach(([x, y]) => w(x, y, col));
-  } else if (wings === "bat") {
-    const col = "#2c2540";
-    [[8, 11], [7, 12], [8, 12], [6, 13], [7, 13], [8, 13], [5, 14], [6, 14], [7, 14], [8, 14], [4, 15], [5, 15], [6, 15], [7, 15], [8, 15], [3, 16], [5, 16], [6, 16], [7, 16], [8, 16], [2, 17], [3, 17], [5, 17], [6, 17], [7, 17], [8, 17], [1, 18], [2, 18], [4, 18], [5, 18], [6, 18], [7, 18], [8, 18], [0, 19], [1, 19], [3, 19], [4, 19], [5, 19], [6, 19], [7, 19], [8, 19], [2, 20], [3, 20], [4, 20], [5, 20], [6, 20], [7, 20], [8, 20], [4, 21], [5, 21], [6, 21], [7, 21], [8, 21], [5, 22], [6, 22], [7, 22], [8, 22], [6, 23], [7, 23], [8, 23]].forEach(([x, y]) => w(x, y, col));
-  } else if (wings === "butterfly") {
-    [[8, 10], [7, 11], [8, 11], [6, 12], [7, 12], [8, 12], [5, 13], [6, 13], [7, 13], [8, 13], [4, 14], [5, 14], [6, 14], [7, 14], [8, 14], [3, 15], [4, 15], [5, 15], [6, 15], [7, 15], [8, 15], [3, 16], [4, 16], [5, 16], [6, 16], [7, 16], [8, 16], [4, 17], [5, 17], [6, 17], [7, 17], [8, 17]].forEach(([x, y]) => w(x, y, "#ff77b7"));
-    [[5, 20], [6, 20], [7, 20], [8, 20], [4, 21], [5, 21], [6, 21], [7, 21], [8, 21], [5, 22], [6, 22], [7, 22], [8, 22], [6, 23], [7, 23], [8, 23], [7, 24], [8, 24]].forEach(([x, y]) => w(x, y, "#8a6bff"));
-    w(5, 14, "#ffffff");
-    w(6, 21, "#ffffff");
-  } else if (wings === "flame") {
-    [[8, 12], [7, 13], [8, 13], [6, 14], [7, 14], [8, 14], [5, 15], [6, 15], [7, 15], [8, 15], [4, 16], [5, 16], [6, 16], [7, 16], [8, 16], [3, 17], [4, 17], [5, 17], [6, 17], [7, 17], [8, 17], [4, 18], [5, 18], [6, 18], [7, 18], [8, 18], [5, 19], [6, 19], [7, 19], [8, 19], [6, 20], [7, 20], [8, 20], [7, 21], [8, 21]].forEach(([x, y]) => w(x, y, "#ff8a3d"));
-    [[8, 14], [7, 15], [8, 15], [7, 16], [8, 16], [6, 17], [7, 17], [8, 17], [7, 18], [8, 18], [8, 19]].forEach(([x, y]) => w(x, y, "#ffcf5c"));
+  // ---- Wings (behind body, mirrored) — each a distinct pixel-map shape ----
+  // Column 0 = outer tip, column 9 = attaches behind the shoulder.
+  type WingMap = { oy: number; legend: Record<string, string>; rows: string[] };
+  const WINGS: Record<string, WingMap> = {
+    angel: {
+      oy: 6,
+      legend: { W: "#eef2ff", a: "#ccd6ef" },
+      rows: [
+        "......WWW.",
+        "....WWWWW.",
+        "..WWWWWWW.",
+        ".WWWWWWaW.",
+        "WWWWWWWWW.",
+        "WWWWWWWWW.",
+        "aWWWWWWWW.",
+        ".aWWWaWWW.",
+        "..aW.aWWW.",
+        "...W..aWW.",
+        "......W.W.",
+      ],
+    },
+    bat: {
+      oy: 7,
+      legend: { B: "#2c2540", b: "#443a63" },
+      rows: [
+        ".......BB.",
+        ".....BBBB.",
+        "...BBBBBB.",
+        ".BBBBBbBB.",
+        "BBBBBBBBB.",
+        "bBBBBBBBB.",
+        ".bBBBBBBB.",
+        "B.bBBbBBB.",
+        ".B.Bb.bBB.",
+        "..B.B..bB.",
+      ],
+    },
+    butterfly: {
+      oy: 6,
+      legend: { p: "#ff77b7", q: "#8a6bff", s: "#ffffff" },
+      rows: [
+        "..pppp....",
+        ".ppppppp..",
+        "pppppsppp.",
+        "ppppppppp.",
+        "psppppppp.",
+        ".ppppppp..",
+        "...ppp....",
+        "....qqq...",
+        "..qqqqqq..",
+        "..qqsqqq..",
+        "...qqqq...",
+        "....qq....",
+      ],
+    },
+    flame: {
+      oy: 8,
+      legend: { f: "#ff8a3d", F: "#ffcf5c", r: "#ff5a2c" },
+      rows: [
+        "...f...f..",
+        "..fff.fff.",
+        ".ff.fffFf.",
+        "rff.ffFFf.",
+        "rffffFFFf.",
+        "rfffffFFf.",
+        ".rfffFFf..",
+        "..rfffF...",
+        "...rff....",
+      ],
+    },
+  };
+  const wm = WINGS[wings];
+  if (wm) {
+    wm.rows.forEach((row, r) => {
+      for (let c = 0; c < row.length; c++) {
+        const col = wm.legend[row[c]];
+        if (!col) continue;
+        addSil(c, wm.oy + r, col);
+        addSil(31 - c, wm.oy + r, col);
+      }
+    });
   }
-  wingList.forEach(({ x, y, c }) => {
-    addSil(x, y, c);
-    addSil(31 - x, y, c);
-  });
 
   // ---- Body ----
   const topColor = (x: number) =>
@@ -117,9 +177,24 @@ export function Avatar({
   rectSil(6, 7, 23, 24, skin); // left hand
   rectSil(24, 25, 23, 24, skin); // right hand
 
-  // ---- Head, ears, neck ----
+  // ---- Head (rounded), ears, neck ----
   rectSil(14, 17, 16, 17, skin); // neck
-  rectSil(10, 21, 4, 15, skin); // head
+  (
+    [
+      [4, 12, 19],
+      [5, 11, 20],
+      [6, 10, 21],
+      [7, 10, 21],
+      [8, 10, 21],
+      [9, 10, 21],
+      [10, 10, 21],
+      [11, 10, 21],
+      [12, 10, 21],
+      [13, 10, 21],
+      [14, 11, 20],
+      [15, 12, 19],
+    ] as const
+  ).forEach(([y, x0, x1]) => rectSil(x0, x1, y, y, skin));
   rectSil(8, 9, 9, 12, skin); // left ear
   rectSil(22, 23, 9, 12, skin); // right ear
 
@@ -160,42 +235,95 @@ export function Avatar({
       break;
   }
 
-  // ---- Pet (sits at the lower-left, in front of the wings) ----
+  // ---- Pet (detailed sprite at the lower-left, in front of the wings) ----
   const pet = get("pets").style!;
   if (pet && pet !== "none") {
-    const petColor =
-      ({
-        cat: "#8a93b0",
-        dog: "#b07a4a",
-        bunny: "#eef2ff",
-        fox: "#e0844e",
-        dragon: "#43d17a",
-        robot: "#b9c2e0",
-      } as Record<string, string>)[pet] || "#8a93b0";
-    rectSil(2, 7, 28, 31, petColor); // body
-    rectSil(2, 6, 25, 27, petColor); // head
-    addSil(1, 29, petColor); // tail
-    addSil(1, 30, petColor);
-    if (pet === "cat" || pet === "fox") {
-      [[2, 23], [2, 24], [6, 23], [6, 24]].forEach(([x, y]) => addSil(x, y, petColor));
+    const P = (x: number, y: number, c: string) => addSil(x, y, c);
+    const F = (x: number, y: number, c: string) => face.push({ x, y, c });
+    const many = (cells: number[][], c: string) =>
+      cells.forEach(([x, y]) => P(x, y, c));
+
+    if (pet === "cat") {
+      const g = "#8a93b0";
+      many([[3, 23], [3, 24], [5, 23], [5, 24]], g); // ears
+      P(3, 24, "#ff9db0");
+      P(5, 24, "#ff9db0"); // inner ears
+      many([[3, 25], [4, 25], [5, 25], [3, 26], [4, 26], [5, 26], [3, 27], [4, 27], [5, 27]], g); // head
+      many([[2, 28], [3, 28], [4, 28], [5, 28], [6, 28], [2, 29], [3, 29], [4, 29], [5, 29], [6, 29], [2, 30], [3, 30], [4, 30], [5, 30], [6, 30]], g); // body
+      many([[4, 29], [4, 30]], "#cfd6ea"); // belly
+      many([[7, 27], [7, 28], [8, 28]], g); // tail
+      many([[2, 31], [3, 31], [5, 31], [6, 31]], g); // feet
+      F(3, 26, DARK);
+      F(5, 26, DARK);
+      F(4, 27, "#ff9db0"); // nose
     } else if (pet === "dog") {
-      [[1, 25], [1, 26], [7, 25], [7, 26]].forEach(([x, y]) => addSil(x, y, petColor));
+      const b = "#b07a4a";
+      many([[2, 25], [2, 26], [6, 25], [6, 26]], "#8a5a34"); // floppy ears
+      many([[3, 25], [4, 25], [5, 25], [3, 26], [4, 26], [5, 26], [3, 27], [4, 27], [5, 27]], b); // head
+      many([[4, 27], [4, 28]], "#e6cba3"); // snout
+      many([[2, 28], [3, 28], [4, 28], [5, 28], [6, 28], [2, 29], [3, 29], [4, 29], [5, 29], [6, 29], [2, 30], [3, 30], [4, 30], [5, 30], [6, 30]], b); // body
+      many([[7, 28], [7, 29]], b); // tail
+      many([[2, 31], [3, 31], [5, 31], [6, 31]], b); // feet
+      F(3, 26, DARK);
+      F(5, 26, DARK);
+      F(4, 27, DARK); // nose
     } else if (pet === "bunny") {
-      [[2, 22], [2, 23], [2, 24], [5, 22], [5, 23], [5, 24]].forEach(([x, y]) => addSil(x, y, petColor));
-    } else if (pet === "dragon") {
-      [[2, 23], [2, 24], [6, 23], [6, 24]].forEach(([x, y]) => addSil(x, y, petColor));
-      addSil(4, 23, "#2f9d5b");
-      addSil(8, 29, petColor); // spiky tail tip
+      const wt = "#eef2ff";
+      many([[3, 22], [3, 23], [3, 24], [5, 22], [5, 23], [5, 24]], wt); // tall ears
+      P(3, 23, "#ffb3cf");
+      P(5, 23, "#ffb3cf"); // inner ears
+      many([[3, 25], [4, 25], [5, 25], [3, 26], [4, 26], [5, 26], [3, 27], [4, 27], [5, 27]], wt); // head
+      many([[2, 28], [3, 28], [4, 28], [5, 28], [6, 28], [2, 29], [3, 29], [4, 29], [5, 29], [6, 29], [3, 30], [4, 30], [5, 30]], wt); // body
+      P(7, 29, wt); // tail puff
+      many([[2, 31], [3, 31], [5, 31], [6, 31]], wt); // feet
+      F(3, 26, DARK);
+      F(5, 26, DARK);
+      F(4, 27, "#ff9db0"); // nose
+    } else if (pet === "fox") {
+      const o = "#e0844e";
+      const wt = "#f4efe6";
+      many([[3, 23], [3, 24], [5, 23], [5, 24]], o); // ears
+      P(3, 23, "#2b2540");
+      P(5, 23, "#2b2540"); // dark ear tips
+      many([[3, 25], [4, 25], [5, 25], [3, 26], [4, 26], [5, 26], [3, 27], [4, 27], [5, 27]], o); // head
+      P(3, 27, wt);
+      P(5, 27, wt); // white cheeks
+      many([[2, 28], [3, 28], [4, 28], [5, 28], [6, 28], [2, 29], [3, 29], [4, 29], [5, 29], [6, 29], [3, 30], [4, 30], [5, 30]], o); // body
+      many([[4, 28], [4, 29]], wt); // white chest
+      many([[7, 27], [7, 28], [8, 28], [8, 29]], o); // bushy tail
+      P(8, 28, wt); // white tail tip
+      many([[2, 31], [3, 31], [5, 31], [6, 31]], "#2b2540"); // dark socks
+      F(3, 26, DARK);
+      F(5, 26, DARK);
+      F(4, 27, "#2b2540"); // nose
     } else if (pet === "robot") {
-      addSil(4, 22, petColor);
-      addSil(4, 23, petColor);
-    }
-    // pet face (interior)
-    face.push({ x: 3, y: 26, c: DARK });
-    face.push({ x: 5, y: 26, c: DARK });
-    if (pet === "fox") {
-      face.push({ x: 3, y: 27, c: "#ffffff" });
-      face.push({ x: 5, y: 27, c: "#ffffff" });
+      const s = "#b9c2e0";
+      const m = "#7f8bb0";
+      P(4, 22, "#ff6b6b"); // antenna light
+      P(4, 23, s); // antenna
+      many([[3, 24], [4, 24], [5, 24], [3, 25], [4, 25], [5, 25], [3, 26], [4, 26], [5, 26]], s); // head
+      many([[3, 27], [4, 27], [5, 27], [3, 28], [4, 28], [5, 28], [3, 29], [4, 29], [5, 29]], s); // body
+      P(4, 28, m); // chest panel
+      many([[2, 27], [2, 28], [6, 27], [6, 28]], m); // arms
+      many([[3, 30], [3, 31], [5, 30], [5, 31]], m); // legs
+      F(3, 25, "#57e0c8");
+      F(5, 25, "#57e0c8"); // glowing eyes
+      F(4, 26, DARK); // mouth
+    } else if (pet === "dragon") {
+      const g = "#43d17a";
+      const dg = "#2f9d5b";
+      P(3, 23, "#e8e0c0");
+      P(5, 23, "#e8e0c0"); // horns
+      many([[3, 24], [4, 24], [5, 24], [3, 25], [4, 25], [5, 25], [3, 26], [4, 26], [5, 26]], g); // head
+      many([[2, 27], [3, 27], [4, 27], [5, 27], [6, 27], [2, 28], [3, 28], [4, 28], [5, 28], [6, 28], [3, 29], [4, 29], [5, 29]], g); // body
+      many([[4, 28], [4, 29]], "#ffcf5c"); // belly
+      many([[6, 24], [6, 25], [7, 25]], dg); // little wing
+      many([[7, 28], [8, 28], [8, 29]], g); // tail
+      P(8, 29, dg); // spike
+      many([[2, 30], [3, 30], [5, 30], [6, 30], [2, 31], [6, 31]], g); // feet
+      F(3, 25, DARK);
+      F(5, 25, DARK);
+      F(4, 26, dg); // nostril
     }
   }
 
