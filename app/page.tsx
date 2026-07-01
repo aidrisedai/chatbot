@@ -1,167 +1,169 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Message, type ChatMessage } from "@/components/Message";
+import { useCallback, useState } from "react";
+import { ChallengeCard } from "@/components/ChallengeCard";
+import type { Challenge } from "@/lib/types";
 
-const SUGGESTIONS = [
-  "I've never coded before. Where do I start?",
-  "Explain what a variable is, like I'm five.",
-  "What's the difference between a list and a dictionary in Python?",
-  "Help me understand this error: 'TypeError: cannot read property of undefined'",
+const TRACKS = [
+  { label: "Python", value: "Python for beginners", emoji: "🐍" },
+  { label: "JavaScript", value: "JavaScript for beginners", emoji: "✨" },
+  { label: "HTML & CSS", value: "HTML and CSS for beginners", emoji: "🎨" },
+  { label: "Surprise me", value: "a surprise mix of beginner-friendly coding topics", emoji: "🎲" },
 ];
 
 export default function Home() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [isStreaming, setIsStreaming] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [track, setTrack] = useState<string | null>(null);
+  const [challenge, setChallenge] = useState<Challenge | null>(null);
+  const [challengeId, setChallengeId] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [solved, setSolved] = useState(0);
+  const [recent, setRecent] = useState<string[]>([]);
 
-  function autoGrow() {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 200) + "px";
+  const level = 1 + Math.floor(solved / 3);
+
+  const loadNext = useCallback(
+    async (activeTrack: string, seen: string[]) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/challenge", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            track: activeTrack,
+            level: 1 + Math.floor(solved / 3),
+            recent: seen,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Request failed.");
+        const c = data as Challenge;
+        setChallenge(c);
+        setChallengeId((id) => id + 1);
+        setRecent((prev) => [...prev, c.concept].slice(-10));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Something went wrong.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [solved]
+  );
+
+  function start(value: string) {
+    setTrack(value);
+    setScore(0);
+    setStreak(0);
+    setBestStreak(0);
+    setSolved(0);
+    setRecent([]);
+    setChallenge(null);
+    loadNext(value, []);
   }
 
-  async function send(text: string) {
-    const trimmed = text.trim();
-    if (!trimmed || isStreaming) return;
-
-    const history: ChatMessage[] = [
-      ...messages,
-      { role: "user", content: trimmed },
-    ];
-    setMessages([...history, { role: "assistant", content: "" }]);
-    setInput("");
-    setIsStreaming(true);
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
-      });
-
-      if (!res.ok || !res.body) {
-        const err = await res.json().catch(() => ({ error: "Request failed." }));
-        throw new Error(err.error || "Request failed.");
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let acc = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        acc += decoder.decode(value, { stream: true });
-        setMessages((prev) => {
-          const next = [...prev];
-          next[next.length - 1] = { role: "assistant", content: acc };
-          return next;
-        });
-      }
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Something went wrong.";
-      setMessages((prev) => {
-        const next = [...prev];
-        next[next.length - 1] = {
-          role: "assistant",
-          content: `_⚠️ ${msg}_`,
-        };
+  function handleResult(correct: boolean) {
+    if (correct) {
+      const bonus = 10 + streak * 2; // streak makes each win worth more
+      setScore((s) => s + bonus);
+      setStreak((st) => {
+        const next = st + 1;
+        setBestStreak((b) => Math.max(b, next));
         return next;
       });
-    } finally {
-      setIsStreaming(false);
+      setSolved((n) => n + 1);
+    } else {
+      setStreak(0);
     }
   }
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    send(input);
+  function handleNext() {
+    if (track) loadNext(track, recent);
   }
 
-  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      send(input);
-    }
+  function backToMenu() {
+    setTrack(null);
+    setChallenge(null);
+    setError(null);
   }
 
+  // ---- Track picker ----
+  if (!track) {
+    return (
+      <main className="game">
+        <div className="menu">
+          <div className="menu-logo">🎮</div>
+          <h1>CodeQuest</h1>
+          <p className="tagline">
+            Learn to code by playing. Tiny challenges, instant feedback, real skills.
+          </p>
+          <div className="track-grid">
+            {TRACKS.map((t) => (
+              <button key={t.value} className="track" onClick={() => start(t.value)}>
+                <span className="track-emoji">{t.emoji}</span>
+                <span className="track-label">{t.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // ---- Game screen ----
   return (
-    <main className="app">
-      <header className="header">
-        <span className="logo">🤖</span>
-        <div>
-          <h1>CodeTutor</h1>
-          <p>Your patient AI guide to learning how to code</p>
+    <main className="game">
+      <header className="hud">
+        <button className="back" onClick={backToMenu} title="Change track">
+          ← Menu
+        </button>
+        <div className="stats">
+          <span className="stat" title="Score">
+            ⭐ {score}
+          </span>
+          <span className="stat" title="Streak">
+            🔥 {streak}
+          </span>
+          <span className="stat" title="Level">
+            📈 Lv {level}
+          </span>
         </div>
       </header>
 
-      <div className="messages">
-        {messages.length === 0 ? (
-          <div className="empty-state">
-            <h2>👋 Ready to learn to code?</h2>
-            <p>
-              Ask me anything — from your very first line of code to tricky bugs.
-              I&apos;ll explain the <em>why</em>, not just the <em>how</em>.
-            </p>
-            <div className="suggestions">
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
-                  className="suggestion"
-                  onClick={() => send(s)}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
+      <div className="stage">
+        {loading && (
+          <div className="loading">
+            <div className="spinner" />
+            <p>Building your next challenge…</p>
           </div>
-        ) : (
-          messages.map((m, i) => (
-            <Message
-              key={i}
-              message={m}
-              streaming={
-                isStreaming &&
-                i === messages.length - 1 &&
-                m.role === "assistant"
-              }
-            />
-          ))
         )}
-        <div ref={messagesEndRef} />
+
+        {!loading && error && (
+          <div className="error-box">
+            <p>⚠️ {error}</p>
+            <button className="next-btn" onClick={handleNext}>
+              Try again
+            </button>
+          </div>
+        )}
+
+        {!loading && !error && challenge && (
+          <ChallengeCard
+            key={challengeId}
+            challenge={challenge}
+            onResult={handleResult}
+            onNext={handleNext}
+          />
+        )}
       </div>
 
-      <div className="composer">
-        <form onSubmit={onSubmit}>
-          <textarea
-            ref={textareaRef}
-            value={input}
-            placeholder="Ask a coding question…"
-            rows={1}
-            onChange={(e) => {
-              setInput(e.target.value);
-              autoGrow();
-            }}
-            onKeyDown={onKeyDown}
-            disabled={isStreaming}
-          />
-          <button type="submit" disabled={isStreaming || !input.trim()}>
-            {isStreaming ? "…" : "Send"}
-          </button>
-        </form>
-        <p className="hint">
-          Press Enter to send · Shift+Enter for a new line
-        </p>
-      </div>
+      <footer className="foot">
+        Best streak: 🔥 {bestStreak} · Solved: {solved}
+      </footer>
     </main>
   );
 }

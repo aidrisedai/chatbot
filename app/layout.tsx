@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CodeTutor — Learn to Code with AI",
+  title: "CodeQuest — Learn to Code by Playing",
   description:
-    "A friendly AI chatbot that teaches you how to code, one step at a time.",
+    "A coding game with bite-sized challenges: multiple choice, predict-the-output, fill-in-the-blank, and find-the-error. Learn by doing.",
 };
 
 export default function RootLayout({
