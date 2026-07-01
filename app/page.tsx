@@ -67,11 +67,19 @@ export default function Home() {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as GameState;
+        const base = defaultAvatar();
         setState({
           ...defaultState(),
           ...parsed,
           daily: ensureToday(parsed.daily),
-          avatar: parsed.avatar ?? defaultAvatar(),
+          avatar: parsed.avatar
+            ? {
+                equipped: { ...base.equipped, ...parsed.avatar.equipped },
+                owned: Array.from(
+                  new Set([...(parsed.avatar.owned ?? []), ...base.owned])
+                ),
+              }
+            : base,
         });
       }
     } catch {

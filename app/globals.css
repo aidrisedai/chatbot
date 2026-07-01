@@ -118,9 +118,9 @@ code,
 /* ---------- HUD ---------- */
 .hud {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 4px 10px;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 4px 12px;
 }
 
 .back {
@@ -358,7 +358,17 @@ code,
 
 /* XP bar */
 .xp {
-  margin-top: 10px;
+  margin-top: 0;
+}
+
+.wallet {
+  row-gap: 8px;
+  justify-content: flex-end;
+}
+
+.hud-row {
+  flex-wrap: wrap;
+  row-gap: 8px;
 }
 
 .xp-top {
@@ -391,7 +401,9 @@ code,
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--card-edge);
   flex-wrap: wrap;
 }
 

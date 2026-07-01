@@ -6,7 +6,8 @@ export type AvatarCategory =
   | "top"
   | "bottom"
   | "glasses"
-  | "wings";
+  | "wings"
+  | "pets";
 
 export const AVATAR_CATEGORIES: { key: AvatarCategory; label: string }[] = [
   { key: "background", label: "Background" },
@@ -17,6 +18,7 @@ export const AVATAR_CATEGORIES: { key: AvatarCategory; label: string }[] = [
   { key: "bottom", label: "Bottom" },
   { key: "glasses", label: "Glasses" },
   { key: "wings", label: "Wings" },
+  { key: "pets", label: "Pet" },
 ];
 
 export interface AvatarItem {
@@ -92,6 +94,15 @@ export const AVATAR_ITEMS: AvatarItem[] = [
   { id: "wing-bat", category: "wings", name: "Bat", cost: 50, style: "bat" },
   { id: "wing-butterfly", category: "wings", name: "Butterfly", cost: 60, style: "butterfly" },
   { id: "wing-flame", category: "wings", name: "Flame", cost: 80, style: "flame" },
+
+  // Pets
+  { id: "pet-none", category: "pets", name: "None", cost: 0, style: "none" },
+  { id: "pet-cat", category: "pets", name: "Cat", cost: 25, style: "cat" },
+  { id: "pet-dog", category: "pets", name: "Dog", cost: 25, style: "dog" },
+  { id: "pet-bunny", category: "pets", name: "Bunny", cost: 30, style: "bunny" },
+  { id: "pet-fox", category: "pets", name: "Fox", cost: 35, style: "fox" },
+  { id: "pet-robot", category: "pets", name: "Robot", cost: 45, style: "robot" },
+  { id: "pet-dragon", category: "pets", name: "Dragon", cost: 70, style: "dragon" },
 ];
 
 export const AVATAR_MAP: Record<string, AvatarItem> = Object.fromEntries(
@@ -107,6 +118,7 @@ export const DEFAULT_EQUIPPED: Record<AvatarCategory, string> = {
   bottom: "bot-navy",
   glasses: "gl-none",
   wings: "wing-none",
+  pets: "pet-none",
 };
 
 export type AvatarConfig = {
