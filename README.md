@@ -36,6 +36,9 @@ me") and play — miss one and you see the answer plus a one-line explanation.
   glasses, wings, and backgrounds, then mix and match. Skin tones are free.
 - Everything (level, XP, coins, lives, boosts, daily goals) **saves automatically**
   in your browser.
+- **Retro pixel look + chiptune sound** — a pixel-art (Habitica-style) theme with
+  8-bit sound effects synthesized in-browser via the Web Audio API (no audio
+  files). Toggle sound with the 🔊 button.
 
 ## Getting started
 

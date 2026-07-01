@@ -166,6 +166,7 @@ export function Avatar({
       height={size}
       role="img"
       aria-label="Your avatar"
+      shapeRendering="crispEdges"
     >
       <defs>
         <linearGradient id={`${uid}-bg`} x1="0" y1="0" x2="0" y2="1">

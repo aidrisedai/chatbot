@@ -51,6 +51,7 @@ export type GameState = {
   daily: Daily;
   tracks: Record<string, TrackProgress>;
   avatar: AvatarConfig;
+  muted: boolean;
 };
 
 export const DAILY_GOALS: {
@@ -87,6 +88,7 @@ export function defaultState(): GameState {
     daily: freshDaily(),
     tracks: {},
     avatar: defaultAvatar(),
+    muted: false,
   };
 }
 
@@ -170,5 +172,6 @@ export function applyAnswer(
     daily,
     tracks: { ...state.tracks, [track]: nt },
     avatar: state.avatar,
+    muted: state.muted,
   };
 }

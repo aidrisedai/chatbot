@@ -926,3 +926,170 @@ code,
     font-size: 20px;
   }
 }
+
+/* ============================================================
+   Pixel / retro theme (Habitica-style)
+   ============================================================ */
+:root {
+  --font-pixel: "Press Start 2P", ui-monospace, monospace;
+  --font-body: "VT323", ui-monospace, monospace;
+  --px-shadow: 3px 3px 0 rgba(0, 0, 0, 0.5);
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 20px;
+  line-height: 1.35;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+}
+
+/* Pixel font for headings + short labels */
+.menu h1,
+.card-title,
+.modal-head h3,
+.verdict,
+.daily-head,
+.badge,
+.chip,
+.tab,
+.back,
+.shop-btn,
+.buy,
+.item-btn,
+.item-badge,
+.next-btn,
+.check-btn,
+.track-label,
+.track-save,
+.goal-reward,
+.customize {
+  font-family: var(--font-pixel);
+  letter-spacing: 0;
+}
+
+.menu h1 {
+  font-size: 26px;
+  line-height: 1.5;
+  -webkit-text-fill-color: currentColor;
+  color: var(--accent2);
+  background: none;
+}
+.card-title {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.modal-head h3 {
+  font-size: 14px;
+}
+.verdict {
+  font-size: 12px;
+}
+.daily-head {
+  font-size: 11px;
+}
+.badge,
+.chip,
+.tab,
+.track-save,
+.goal-reward,
+.item-badge {
+  font-size: 10px;
+}
+.back,
+.shop-btn,
+.buy,
+.item-btn,
+.next-btn,
+.check-btn,
+.customize,
+.track-label {
+  font-size: 11px;
+}
+.badge {
+  padding: 6px 8px;
+}
+.next-btn,
+.buy.wide,
+.ghost.wide {
+  line-height: 1.5;
+}
+
+/* Readable body copy stays VT323 (bumped up since the font runs small) */
+.card-prompt {
+  font-size: 18px;
+}
+.tagline,
+.oo-text,
+.shop-desc,
+.explanation,
+.answer-reveal,
+.item-name {
+  font-size: 18px;
+}
+.xp-top,
+.goal-top,
+.goal-sub,
+.foot,
+.hint {
+  font-size: 15px;
+}
+
+/* Chunky pixel borders + hard shadows */
+.card,
+.modal,
+.track,
+.daily,
+.shop-item,
+.item,
+.option,
+.code-lines,
+.blank-input,
+.chip,
+.badge,
+.tab,
+.back,
+.shop-btn,
+.buy,
+.item-btn,
+.next-btn,
+.check-btn,
+.avatar-frame,
+.learn {
+  border-radius: 4px;
+  border-width: 2px;
+  border-style: solid;
+}
+
+.xp-track,
+.goal-track {
+  border-radius: 3px;
+  border: 2px solid var(--card-edge);
+}
+
+.card,
+.modal,
+.track,
+.option,
+.buy,
+.next-btn,
+.item,
+.shop-item,
+.daily,
+.learn {
+  box-shadow: var(--px-shadow);
+}
+
+.track:hover,
+.option:not(:disabled):hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Crisp, blocky avatar */
+.avatar-frame {
+  border-width: 3px;
+}
+.avatar-frame svg {
+  image-rendering: pixelated;
+}

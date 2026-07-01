@@ -8,6 +8,7 @@ import { Avatar } from "@/components/Avatar";
 import { Closet } from "@/components/Closet";
 import type { Challenge } from "@/lib/types";
 import { defaultAvatar, type AvatarItem } from "@/lib/avatar";
+import { playSound, setMuted } from "@/lib/sound";
 import {
   applyAnswer,
   BOOST_DURATION,
@@ -60,6 +61,11 @@ export default function Home() {
     }
     setHydrated(true);
   }, []);
+
+  // Keep the sound engine in sync with the mute setting.
+  useEffect(() => {
+    setMuted(state.muted);
+  }, [state.muted]);
 
   // Persist on change.
   useEffect(() => {
@@ -121,12 +127,22 @@ export default function Home() {
 
   function handleResult(correct: boolean) {
     if (!track) return;
-    setState((s) => applyAnswer(s, track, correct, Math.random()));
+    const before = state.tracks[track] || EMPTY_TRACK;
+    const next = applyAnswer(state, track, correct, Math.random());
+    setState(next);
+    const after = next.tracks[track];
+    if (correct) playSound(after.level > before.level ? "levelUp" : "correct");
+    else playSound("wrong");
   }
 
   function handleNext() {
     if (!track || state.lives <= 0) return; // out-of-lives overlay handles it
+    playSound("click");
     loadNext(track, cur.level, cur.recent);
+  }
+
+  function toggleMute() {
+    setState((s) => ({ ...s, muted: !s.muted }));
   }
 
   function backToMenu() {
@@ -143,6 +159,7 @@ export default function Home() {
         ? { ...s, coins: s.coins - LIFE_COST, lives: s.lives + 1 }
         : s
     );
+    playSound("buy");
   }
 
   function buyBoost(mult: number) {
@@ -153,11 +170,13 @@ export default function Home() {
         ? { ...s, coins: s.coins - item, boost: { mult, remaining: BOOST_DURATION } }
         : s
     );
+    playSound("buy");
   }
 
   function reviveWithCoins() {
     if (!track || state.coins < LIFE_COST) return;
     setState((s) => ({ ...s, coins: s.coins - LIFE_COST, lives: s.lives + 1 }));
+    playSound("buy");
     loadNext(track, cur.level, cur.recent);
   }
 
@@ -183,9 +202,11 @@ export default function Home() {
         },
       };
     });
+    playSound("buy");
   }
 
   function equipAvatar(item: AvatarItem) {
+    playSound("click");
     setState((s) => ({
       ...s,
       avatar: {
@@ -244,6 +265,9 @@ export default function Home() {
                 ⚡ {state.boost.mult}× · {state.boost.remaining}
               </span>
             )}
+            <button className="shop-btn" onClick={toggleMute} title="Sound">
+              {state.muted ? "🔇" : "🔊"}
+            </button>
           </div>
 
           <DailyGoals daily={ensureToday(state.daily)} />
@@ -296,6 +320,9 @@ export default function Home() {
                 ⚡ {state.boost.mult}× · {state.boost.remaining}
               </span>
             )}
+            <button className="shop-btn" onClick={toggleMute} title="Sound">
+              {state.muted ? "🔇" : "🔊"}
+            </button>
             <button className="shop-btn" onClick={() => setShopOpen(true)}>
               🛒
             </button>
