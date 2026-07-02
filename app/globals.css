@@ -1036,10 +1036,111 @@ code,
 }
 
 /* ============================================================
-   Retro UI accents (readable text + pixel avatar)
+   Pixel / retro theme (fonts + accents)
    ============================================================ */
 :root {
   --px-shadow: 3px 3px 0 rgba(0, 0, 0, 0.5);
+  --font-pixel: var(--font-pixel-raw), ui-monospace, "Courier New", monospace;
+  --font-body: var(--font-body-raw), ui-monospace, "Courier New", monospace;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+/* Pixel font for headings + short labels */
+.menu h1,
+.card-title,
+.modal-head h3,
+.verdict,
+.daily-head,
+.badge,
+.chip,
+.tab,
+.back,
+.shop-btn,
+.buy,
+.item-btn,
+.item-badge,
+.next-btn,
+.check-btn,
+.track-label,
+.track-save,
+.goal-reward,
+.customize,
+.adv-title,
+.world-name,
+.combatant-name {
+  font-family: var(--font-pixel);
+  letter-spacing: 0;
+}
+
+.menu h1 {
+  font-size: 26px;
+  line-height: 1.5;
+  color: var(--accent2);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+.card-title {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.modal-head h3 {
+  font-size: 14px;
+}
+.verdict {
+  font-size: 12px;
+}
+.daily-head {
+  font-size: 11px;
+}
+.badge,
+.chip,
+.tab,
+.track-save,
+.goal-reward,
+.item-badge {
+  font-size: 10px;
+}
+.back,
+.shop-btn,
+.buy,
+.item-btn,
+.next-btn,
+.check-btn,
+.customize,
+.track-label,
+.world-name,
+.combatant-name {
+  font-size: 11px;
+}
+.adv-title {
+  font-size: 13px;
+}
+
+/* Readable body copy stays VT323 (bumped up since it runs small) */
+.card-prompt {
+  font-size: 18px;
+}
+.tagline,
+.oo-text,
+.shop-desc,
+.explanation,
+.answer-reveal,
+.item-name,
+.world-quest,
+.battle-msg {
+  font-size: 18px;
+}
+.xp-top,
+.goal-top,
+.goal-sub,
+.foot,
+.hint {
+  font-size: 15px;
 }
 
 /* Chunky borders + hard offset shadows for a boxy, game-like feel */
