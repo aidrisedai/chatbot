@@ -1,18 +1,23 @@
 "use client";
 
 import { BOOSTS, BOOST_DURATION, LIFE_COST, MAX_LIVES } from "@/lib/game";
+import { POTION_COST, POTION_HEAL } from "@/lib/adventure";
 
 export function Shop({
   coins,
   lives,
+  potions,
   onBuyLife,
   onBuyBoost,
+  onBuyPotion,
   onClose,
 }: {
   coins: number;
   lives: number;
+  potions: number;
   onBuyLife: () => void;
   onBuyBoost: (mult: number) => void;
+  onBuyPotion: () => void;
   onClose: () => void;
 }) {
   return (
@@ -28,6 +33,17 @@ export function Shop({
         <div className="wallet-line">
           <span className="chip">🪙 {coins}</span>
           <span className="chip">❤️ {lives}</span>
+          <span className="chip">🧪 {potions}</span>
+        </div>
+
+        <div className="shop-item">
+          <div>
+            <div className="shop-name">🧪 Health potion</div>
+            <div className="shop-desc">Heals {POTION_HEAL} HP in Adventure battles</div>
+          </div>
+          <button className="buy" disabled={coins < POTION_COST} onClick={onBuyPotion}>
+            {POTION_COST} 🪙
+          </button>
         </div>
 
         <div className="shop-item">

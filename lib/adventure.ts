@@ -15,7 +15,27 @@ export interface WorldDef {
   level: number; // difficulty
   quest: string;
   encounters: Encounter[]; // last one is the boss
+  reward: string; // avatar item id unlocked when the boss is first defeated
 }
+
+export interface Attack {
+  id: string;
+  name: string;
+  emoji: string;
+  dmg: number;
+  cooldown: number; // turns before it can be used again
+}
+
+// Stronger spells recharge over more turns; Spark is always available.
+export const ATTACKS: Attack[] = [
+  { id: "spark", name: "Spark", emoji: "⚡", dmg: 24, cooldown: 0 },
+  { id: "frost", name: "Frost", emoji: "❄️", dmg: 36, cooldown: 1 },
+  { id: "fire", name: "Fireball", emoji: "🔥", dmg: 48, cooldown: 2 },
+  { id: "bolt", name: "Thunderbolt", emoji: "🌩️", dmg: 64, cooldown: 3 },
+];
+
+export const POTION_HEAL = 40;
+export const POTION_COST = 15;
 
 export const PLAYER_MAX_HP = 100;
 export const PLAYER_DMG = 28; // base damage per correct answer
@@ -38,6 +58,7 @@ export const WORLDS: WorldDef[] = [
       { name: "Sporeling", emoji: "🍄", hp: 65, dmg: 16 },
       { name: "Syntaxaur", emoji: "🦖", hp: 120, dmg: 18, boss: true },
     ],
+    reward: "pet-cat",
   },
   {
     id: "caverns",
@@ -52,6 +73,7 @@ export const WORLDS: WorldDef[] = [
       { name: "Creeper", emoji: "🕷️", hp: 80, dmg: 19 },
       { name: "Loopernaut", emoji: "🌀", hp: 150, dmg: 21, boss: true },
     ],
+    reward: "wing-butterfly",
   },
   {
     id: "peaks",
@@ -66,6 +88,7 @@ export const WORLDS: WorldDef[] = [
       { name: "Gremlin", emoji: "👺", hp: 90, dmg: 21 },
       { name: "Recursor", emoji: "🐲", hp: 170, dmg: 23, boss: true },
     ],
+    reward: "pet-dragon",
   },
   {
     id: "isles",
@@ -80,6 +103,7 @@ export const WORLDS: WorldDef[] = [
       { name: "Deep Spawn", emoji: "🐙", hp: 100, dmg: 22 },
       { name: "Listlord", emoji: "🦑", hp: 190, dmg: 24, boss: true },
     ],
+    reward: "wing-angel",
   },
   {
     id: "keep",
@@ -94,6 +118,7 @@ export const WORLDS: WorldDef[] = [
       { name: "Wraith", emoji: "🧟", hp: 110, dmg: 24 },
       { name: "Null Dragon", emoji: "🐉", hp: 230, dmg: 26, boss: true },
     ],
+    reward: "wing-flame",
   },
 ];
 

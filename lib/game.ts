@@ -53,6 +53,7 @@ export type GameState = {
   avatar: AvatarConfig;
   muted: boolean;
   adventure: { cleared: string[] };
+  potions: number;
 };
 
 export const DAILY_GOALS: {
@@ -91,6 +92,7 @@ export function defaultState(): GameState {
     avatar: defaultAvatar(),
     muted: false,
     adventure: { cleared: [] },
+    potions: 0,
   };
 }
 
@@ -177,5 +179,6 @@ export function applyAnswer(
     avatar: state.avatar,
     muted: state.muted,
     adventure: state.adventure,
+    potions: state.potions,
   };
 }

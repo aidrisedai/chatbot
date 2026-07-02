@@ -6,15 +6,17 @@ import { Avatar } from "@/components/Avatar";
 import type { Challenge } from "@/lib/types";
 import type { AvatarCategory } from "@/lib/avatar";
 import { playSound } from "@/lib/sound";
+import { AVATAR_MAP } from "@/lib/avatar";
 import {
   WORLDS,
   isWorldUnlocked,
   PLAYER_MAX_HP,
-  PLAYER_DMG,
   STREAK_DMG,
   HEAL_BETWEEN,
   MONSTER_COINS,
   BOSS_COINS,
+  ATTACKS,
+  POTION_HEAL,
   type WorldDef,
 } from "@/lib/adventure";
 
@@ -47,14 +49,20 @@ function HpBar({ hp, max }: { hp: number; max: number }) {
 export function Adventure({
   equipped,
   cleared,
+  potions,
   onClearWorld,
   onReward,
+  onUsePotion,
+  onRewardCosmetic,
   onExit,
 }: {
   equipped: Record<AvatarCategory, string>;
   cleared: string[];
+  potions: number;
   onClearWorld: (id: string) => void;
   onReward: (coins: number) => void;
+  onUsePotion: () => void;
+  onRewardCosmetic: (id: string) => void;
   onExit: () => void;
 }) {
   const [phase, setPhase] = useState<Phase>("map");
@@ -70,6 +78,9 @@ export function Adventure({
   const [error, setError] = useState<string | null>(null);
   const [battleMsg, setBattleMsg] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
+  const [cooldowns, setCooldowns] = useState<Record<string, number>>({});
+  const [armed, setArmed] = useState(ATTACKS[0].id);
+  const [earnedReward, setEarnedReward] = useState<string | null>(null);
 
   const nextTurn = useCallback(
     async (w: WorldDef, seen: string[]) => {
@@ -112,6 +123,8 @@ export function Adventure({
       boss: !!e.boss,
     });
     setStreak(0);
+    setCooldowns({});
+    setArmed(ATTACKS[0].id);
     setBattleMsg(e.boss ? `⚔️ Boss battle: ${e.name}!` : `A wild ${e.name} appears!`);
     setChallenge(null);
     nextTurn(w, seen);
@@ -128,29 +141,51 @@ export function Adventure({
     beginEncounter(w, 0, []);
   }
 
+  // Tick every spell's cooldown down by one turn, then put the used spell on cooldown.
+  function tickCooldowns(usedId?: string, usedCd?: number) {
+    setCooldowns((prev) => {
+      const next: Record<string, number> = {};
+      for (const a of ATTACKS) next[a.id] = Math.max(0, (prev[a.id] || 0) - 1);
+      if (usedId && usedCd) next[usedId] = usedCd;
+      return next;
+    });
+  }
+
   function onAnswer(correct: boolean) {
     if (!foe) return;
     if (correct) {
-      const dmg = PLAYER_DMG + streak * STREAK_DMG;
+      // Cast the armed spell (fall back to the basic one if it's recharging).
+      const ready = (cooldowns[armed] || 0) <= 0;
+      const atk = (ready ? ATTACKS.find((a) => a.id === armed) : ATTACKS[0]) || ATTACKS[0];
+      const dmg = atk.dmg + streak * STREAK_DMG;
       const newFoeHp = Math.max(0, foe.hp - dmg);
       setFoe((f) => (f ? { ...f, hp: newFoeHp } : f));
       setStreak((s) => s + 1);
+      tickCooldowns(atk.id, atk.cooldown);
+      if (atk.cooldown > 0) setArmed(ATTACKS[0].id); // auto-switch off a spent spell
       if (newFoeHp > 0) {
-        // The creature fights back — a glancing blow since you landed your hit.
         const counter = Math.max(1, Math.round(foe.dmg * 0.5));
         setPlayerHp((hp) => Math.max(0, hp - counter));
-        setBattleMsg(`🗡️ You hit ${foe.name} for ${dmg}! It strikes back for ${counter}.`);
+        setBattleMsg(`${atk.emoji} ${atk.name} hits ${foe.name} for ${dmg}! It strikes back for ${counter}.`);
       } else {
-        setBattleMsg(`🗡️ You hit ${foe.name} for ${dmg} — defeated!`);
+        setBattleMsg(`${atk.emoji} ${atk.name} hits ${foe.name} for ${dmg} — defeated!`);
       }
       playSound("correct");
     } else {
-      // Miss — the creature lands a full hit.
       setPlayerHp((hp) => Math.max(0, hp - foe.dmg));
       setStreak(0);
+      tickCooldowns();
       setBattleMsg(`💥 You missed! ${foe.name} hits you for ${foe.dmg}!`);
       playSound("wrong");
     }
+  }
+
+  function drinkPotion() {
+    if (potions <= 0 || playerHp >= PLAYER_MAX_HP) return;
+    onUsePotion();
+    setPlayerHp((hp) => Math.min(PLAYER_MAX_HP, hp + POTION_HEAL));
+    setBattleMsg(`🧪 You drink a potion and restore ${POTION_HEAL} HP.`);
+    playSound("coin");
   }
 
   function onNext() {
@@ -158,8 +193,15 @@ export function Adventure({
     if (foe.hp <= 0) {
       // Win this encounter
       if (foe.boss) {
+        const firstClear = !cleared.includes(world.id);
         onReward(BOSS_COINS);
         onClearWorld(world.id);
+        if (firstClear && world.reward) {
+          onRewardCosmetic(world.reward);
+          setEarnedReward(world.reward);
+        } else {
+          setEarnedReward(null);
+        }
         playSound("levelUp");
         setPhase("cleared");
       } else {
@@ -256,6 +298,24 @@ export function Adventure({
           <div className="big-emoji">🏆</div>
           <h1>{world.name} cleared!</h1>
           <p>You defeated the {world.encounters[world.encounters.length - 1].name} and earned {BOSS_COINS} 🪙.</p>
+          {earnedReward && AVATAR_MAP[earnedReward] && (
+            <div className="loot">
+              <div className="avatar-frame sm loot-avatar">
+                <Avatar
+                  equipped={{
+                    ...equipped,
+                    [AVATAR_MAP[earnedReward].category]: earnedReward,
+                  }}
+                  size={80}
+                />
+              </div>
+              <div className="loot-text">
+                🎁 Loot unlocked: <b>{AVATAR_MAP[earnedReward].name}</b>
+                <br />
+                <span className="loot-sub">Equip it in Customize.</span>
+              </div>
+            </div>
+          )}
           <button className="next-btn" onClick={toMap}>
             Back to map →
           </button>
@@ -339,6 +399,31 @@ export function Adventure({
 
       {battleMsg && <div className="battle-msg">{battleMsg}</div>}
 
+      <div className="spellbar">
+        {ATTACKS.map((a) => {
+          const cd = cooldowns[a.id] || 0;
+          const isArmed = armed === a.id;
+          return (
+            <button
+              key={a.id}
+              className={`spell ${isArmed ? "armed" : ""}`}
+              disabled={cd > 0}
+              onClick={() => {
+                setArmed(a.id);
+                playSound("click");
+              }}
+              title={`${a.name} · ${a.dmg} dmg · ${
+                a.cooldown === 0 ? "no cooldown" : `${a.cooldown}-turn cooldown`
+              }`}
+            >
+              <span className="spell-emoji">{a.emoji}</span>
+              <span className="spell-dmg">{a.dmg}</span>
+              {cd > 0 && <span className="spell-cd">{cd}</span>}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="stage">
         {loading && (
           <div className="loading">
@@ -372,6 +457,14 @@ export function Adventure({
           <div className="combatant-name">You {streak > 1 && `· 🔥 ${streak}`}</div>
           <HpBar hp={playerHp} max={PLAYER_MAX_HP} />
         </div>
+        <button
+          className="potion-btn"
+          disabled={potions <= 0 || playerHp >= PLAYER_MAX_HP}
+          onClick={drinkPotion}
+          title="Drink a health potion"
+        >
+          🧪 {potions}
+        </button>
       </div>
     </main>
   );

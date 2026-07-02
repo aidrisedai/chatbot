@@ -7,6 +7,7 @@ import { DailyGoals } from "@/components/DailyGoals";
 import { Avatar } from "@/components/Avatar";
 import { Closet } from "@/components/Closet";
 import { Adventure } from "@/components/Adventure";
+import { POTION_COST } from "@/lib/adventure";
 import type { Challenge, GradeResult } from "@/lib/types";
 import { defaultAvatar, type AvatarItem } from "@/lib/avatar";
 import { playSound, setMuted } from "@/lib/sound";
@@ -302,6 +303,27 @@ export default function Home() {
     setState((s) => ({ ...s, coins: s.coins + coins }));
   }
 
+  function buyPotion() {
+    setState((s) =>
+      s.coins >= POTION_COST
+        ? { ...s, coins: s.coins - POTION_COST, potions: s.potions + 1 }
+        : s
+    );
+    playSound("buy");
+  }
+
+  function usePotion() {
+    setState((s) => (s.potions > 0 ? { ...s, potions: s.potions - 1 } : s));
+  }
+
+  function rewardCosmetic(id: string) {
+    setState((s) =>
+      s.avatar.owned.includes(id)
+        ? s
+        : { ...s, avatar: { ...s.avatar, owned: [...s.avatar.owned, id] } }
+    );
+  }
+
   function equipAvatar(item: AvatarItem) {
     playSound("click");
     setState((s) => ({
@@ -343,8 +365,11 @@ export default function Home() {
       <Adventure
         equipped={state.avatar.equipped}
         cleared={state.adventure.cleared}
+        potions={state.potions}
         onClearWorld={clearWorld}
         onReward={rewardCoins}
+        onUsePotion={usePotion}
+        onRewardCosmetic={rewardCosmetic}
         onExit={() => setAdventureOpen(false)}
       />
     );
@@ -516,8 +541,10 @@ export default function Home() {
         <Shop
           coins={state.coins}
           lives={state.lives}
+          potions={state.potions}
           onBuyLife={buyLife}
           onBuyBoost={buyBoost}
+          onBuyPotion={buyPotion}
           onClose={() => setShopOpen(false)}
         />
       )}
