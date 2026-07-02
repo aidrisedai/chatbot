@@ -6,6 +6,7 @@ import { Shop } from "@/components/Shop";
 import { DailyGoals } from "@/components/DailyGoals";
 import { Avatar } from "@/components/Avatar";
 import { Closet } from "@/components/Closet";
+import { Adventure } from "@/components/Adventure";
 import type { Challenge, GradeResult } from "@/lib/types";
 import { defaultAvatar, type AvatarItem } from "@/lib/avatar";
 import { playSound, setMuted } from "@/lib/sound";
@@ -60,6 +61,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
   const [closetOpen, setClosetOpen] = useState(false);
+  const [adventureOpen, setAdventureOpen] = useState(false);
 
   // Load saved state once.
   useEffect(() => {
@@ -288,6 +290,18 @@ export default function Home() {
     playSound("buy");
   }
 
+  function clearWorld(id: string) {
+    setState((s) =>
+      s.adventure.cleared.includes(id)
+        ? s
+        : { ...s, adventure: { cleared: [...s.adventure.cleared, id] } }
+    );
+  }
+
+  function rewardCoins(coins: number) {
+    setState((s) => ({ ...s, coins: s.coins + coins }));
+  }
+
   function equipAvatar(item: AvatarItem) {
     playSound("click");
     setState((s) => ({
@@ -323,6 +337,19 @@ export default function Home() {
     loadNext(track, cur.level, cur.recent);
   }
 
+  // ---- Adventure (RPG) mode ----
+  if (adventureOpen) {
+    return (
+      <Adventure
+        equipped={state.avatar.equipped}
+        cleared={state.adventure.cleared}
+        onClearWorld={clearWorld}
+        onReward={rewardCoins}
+        onExit={() => setAdventureOpen(false)}
+      />
+    );
+  }
+
   // ---- Track picker (home) ----
   if (!track) {
     return (
@@ -336,9 +363,14 @@ export default function Home() {
             Learn to code by playing. Earn XP, coins, and level up.
           </p>
 
-          <button className="ghost customize" onClick={() => setClosetOpen(true)}>
-            🎨 Customize avatar
-          </button>
+          <div className="menu-actions">
+            <button className="adventure-btn" onClick={() => setAdventureOpen(true)}>
+              ⚔️ Adventure
+            </button>
+            <button className="ghost customize" onClick={() => setClosetOpen(true)}>
+              🎨 Customize
+            </button>
+          </div>
 
           <div className="wallet-line big">
             <span className="chip">🪙 {state.coins}</span>

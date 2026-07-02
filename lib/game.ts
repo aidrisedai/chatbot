@@ -52,6 +52,7 @@ export type GameState = {
   tracks: Record<string, TrackProgress>;
   avatar: AvatarConfig;
   muted: boolean;
+  adventure: { cleared: string[] };
 };
 
 export const DAILY_GOALS: {
@@ -89,6 +90,7 @@ export function defaultState(): GameState {
     tracks: {},
     avatar: defaultAvatar(),
     muted: false,
+    adventure: { cleared: [] },
   };
 }
 
@@ -174,5 +176,6 @@ export function applyAnswer(
     tracks: { ...state.tracks, [track]: nt },
     avatar: state.avatar,
     muted: state.muted,
+    adventure: state.adventure,
   };
 }
