@@ -1263,6 +1263,14 @@ body {
   text-align: center;
 }
 
+.adv-hearts {
+  font-size: 15px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  min-width: 60px;
+  text-align: right;
+}
+
 /* World map */
 .world-list {
   display: flex;

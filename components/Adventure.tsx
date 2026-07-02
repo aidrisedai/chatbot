@@ -18,7 +18,9 @@ import {
   type WorldDef,
 } from "@/lib/adventure";
 
-type Phase = "map" | "battle" | "lost" | "cleared";
+type Phase = "map" | "battle" | "lost" | "failed" | "cleared";
+
+const LEVEL_HEARTS = 3;
 
 type Foe = {
   name: string;
@@ -60,6 +62,7 @@ export function Adventure({
   const [encounterIndex, setEncounterIndex] = useState(0);
   const [foe, setFoe] = useState<Foe | null>(null);
   const [playerHp, setPlayerHp] = useState(PLAYER_MAX_HP);
+  const [hearts, setHearts] = useState(LEVEL_HEARTS);
   const [streak, setStreak] = useState(0);
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [turnId, setTurnId] = useState(0);
@@ -119,6 +122,7 @@ export function Adventure({
     setWorld(w);
     setEncounterIndex(0);
     setPlayerHp(PLAYER_MAX_HP);
+    setHearts(LEVEL_HEARTS);
     setRecent([]);
     setPhase("battle");
     beginEncounter(w, 0, []);
@@ -128,14 +132,23 @@ export function Adventure({
     if (!foe) return;
     if (correct) {
       const dmg = PLAYER_DMG + streak * STREAK_DMG;
-      setFoe((f) => (f ? { ...f, hp: Math.max(0, f.hp - dmg) } : f));
+      const newFoeHp = Math.max(0, foe.hp - dmg);
+      setFoe((f) => (f ? { ...f, hp: newFoeHp } : f));
       setStreak((s) => s + 1);
-      setBattleMsg(`🗡️ You hit ${foe.name} for ${dmg}!`);
+      if (newFoeHp > 0) {
+        // The creature fights back — a glancing blow since you landed your hit.
+        const counter = Math.max(1, Math.round(foe.dmg * 0.5));
+        setPlayerHp((hp) => Math.max(0, hp - counter));
+        setBattleMsg(`🗡️ You hit ${foe.name} for ${dmg}! It strikes back for ${counter}.`);
+      } else {
+        setBattleMsg(`🗡️ You hit ${foe.name} for ${dmg} — defeated!`);
+      }
       playSound("correct");
     } else {
+      // Miss — the creature lands a full hit.
       setPlayerHp((hp) => Math.max(0, hp - foe.dmg));
       setStreak(0);
-      setBattleMsg(`💥 ${foe.name} hits you for ${foe.dmg}!`);
+      setBattleMsg(`💥 You missed! ${foe.name} hits you for ${foe.dmg}!`);
       playSound("wrong");
     }
   }
@@ -158,8 +171,10 @@ export function Adventure({
         beginEncounter(world, nextIdx, recent);
       }
     } else if (playerHp <= 0) {
+      const newHearts = hearts - 1;
+      setHearts(newHearts);
       playSound("wrong");
-      setPhase("lost");
+      setPhase(newHearts <= 0 ? "failed" : "lost");
     } else {
       nextTurn(world, recent);
     }
@@ -170,6 +185,16 @@ export function Adventure({
     setPlayerHp(PLAYER_MAX_HP);
     setPhase("battle");
     beginEncounter(world, encounterIndex, recent);
+  }
+
+  function restartLevel() {
+    if (!world) return;
+    setHearts(LEVEL_HEARTS);
+    setEncounterIndex(0);
+    setPlayerHp(PLAYER_MAX_HP);
+    setRecent([]);
+    setPhase("battle");
+    beginEncounter(world, 0, []);
   }
 
   function toMap() {
@@ -243,15 +268,42 @@ export function Adventure({
     return (
       <main className="game">
         <div className="adv-result">
-          <div className="big-emoji">💀</div>
-          <h1>You were defeated…</h1>
-          <p>Dust yourself off and try again — your progress on cleared worlds is safe.</p>
+          <div className="big-emoji">💔</div>
+          <h1>You fell in battle!</h1>
+          <p>
+            You lost a heart. {"❤️".repeat(hearts)}
+            {"🤍".repeat(Math.max(0, LEVEL_HEARTS - hearts))} — {hearts} left.
+            Retry this fight with full health.
+          </p>
           <div className="adv-result-actions">
             <button className="next-btn" onClick={retryEncounter}>
               Try again
             </button>
             <button className="ghost" onClick={toMap}>
               Flee to map
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (phase === "failed" && world) {
+    return (
+      <main className="game">
+        <div className="adv-result">
+          <div className="big-emoji">💀</div>
+          <h1>Out of hearts!</h1>
+          <p>
+            You&apos;ve lost all {LEVEL_HEARTS} hearts and must restart {world.name}
+            from the beginning. Cleared worlds stay cleared.
+          </p>
+          <div className="adv-result-actions">
+            <button className="next-btn" onClick={restartLevel}>
+              Restart level
+            </button>
+            <button className="ghost" onClick={toMap}>
+              Back to map
             </button>
           </div>
         </div>
@@ -267,7 +319,10 @@ export function Adventure({
           ← Flee
         </button>
         <h1 className="adv-title">{world?.emoji} {world?.name}</h1>
-        <span style={{ width: 60 }} />
+        <span className="adv-hearts" title="Hearts">
+          {"❤️".repeat(hearts)}
+          {"🤍".repeat(Math.max(0, LEVEL_HEARTS - hearts))}
+        </span>
       </div>
 
       {foe && (
