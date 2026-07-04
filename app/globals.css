@@ -1553,3 +1553,139 @@ body {
   color: var(--muted);
   font-size: 13px;
 }
+
+/* ---------- Spellbook shop trigger (battle spell bar) ---------- */
+.spell.shop {
+  border-style: dashed;
+  border-color: var(--accent);
+}
+
+.spell.shop .spell-dmg {
+  color: var(--accent);
+}
+
+/* ---------- Run code output panel ---------- */
+.run-output {
+  margin: 10px 0 4px;
+  border: 2px solid var(--card-edge);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0a0d1c;
+}
+
+.run-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--card-edge);
+}
+
+.run-pre {
+  margin: 0;
+  padding: 10px 12px;
+  font-family: var(--font-body), ui-monospace, monospace;
+  font-size: 15px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #d7e0ff;
+}
+
+.run-pre.err {
+  color: var(--bad);
+  border-top: 1px solid var(--card-edge);
+}
+
+.run-pre.muted {
+  color: var(--muted);
+}
+
+/* ---------- Badges / achievements grid ---------- */
+.badge-grid {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.badge-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border: 2px solid var(--card-edge);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.badge-card.got {
+  border-color: var(--accent2);
+}
+
+.badge-card.locked {
+  opacity: 0.55;
+}
+
+.badge-emoji {
+  font-size: 26px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.badge-info {
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+}
+
+.badge-name {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.badge-desc {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.badge-reward {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent2);
+}
+
+.badge-card.locked .badge-reward {
+  color: var(--muted);
+}
+
+/* ---------- Achievement toast ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 60;
+  background: var(--card);
+  border: 2px solid var(--accent2);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  animation: toast-in 0.25s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

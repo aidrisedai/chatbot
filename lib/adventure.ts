@@ -24,15 +24,27 @@ export interface Attack {
   emoji: string;
   dmg: number;
   cooldown: number; // turns before it can be used again
+  cost: number; // coins to unlock (0 = owned from the start)
 }
 
-// Stronger spells recharge over more turns; Spark is always available.
+// Stronger spells recharge over more turns; Spark + Frost are free to start.
 export const ATTACKS: Attack[] = [
-  { id: "spark", name: "Spark", emoji: "⚡", dmg: 24, cooldown: 0 },
-  { id: "frost", name: "Frost", emoji: "❄️", dmg: 36, cooldown: 1 },
-  { id: "fire", name: "Fireball", emoji: "🔥", dmg: 48, cooldown: 2 },
-  { id: "bolt", name: "Thunderbolt", emoji: "🌩️", dmg: 64, cooldown: 3 },
+  { id: "spark", name: "Spark", emoji: "⚡", dmg: 24, cooldown: 0, cost: 0 },
+  { id: "frost", name: "Frost", emoji: "❄️", dmg: 36, cooldown: 1, cost: 0 },
+  { id: "fire", name: "Fireball", emoji: "🔥", dmg: 48, cooldown: 2, cost: 45 },
+  { id: "bolt", name: "Thunderbolt", emoji: "🌩️", dmg: 64, cooldown: 3, cost: 100 },
 ];
+
+export const SPELL_UPGRADE_STEP = 8; // extra damage per upgrade level
+export const SPELL_MAX_LEVEL = 3;
+
+export function spellUpgradeCost(level: number): number {
+  return 30 + level * 25;
+}
+
+export function spellDamage(atk: Attack, level: number): number {
+  return atk.dmg + level * SPELL_UPGRADE_STEP;
+}
 
 export const POTION_HEAL = 40;
 export const POTION_COST = 15;

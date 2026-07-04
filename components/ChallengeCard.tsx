@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { isOpen, type Challenge, type GradeResult } from "@/lib/types";
+import { canRun, runCode, type RunResult } from "@/lib/runner";
 
 function normalizeLang(lang: string): string {
   const l = lang.toLowerCase();
@@ -38,6 +39,8 @@ export function ChallengeCard({
   const [revealed, setRevealed] = useState(false);
   const [awarded, setAwarded] = useState(false);
   const [showSolution, setShowSolution] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [runResult, setRunResult] = useState<RunResult | null>(null);
 
   const lang = normalizeLang(challenge.language);
   const lines = challenge.code.replace(/\n+$/, "").split("\n");
@@ -83,6 +86,15 @@ export function ChallengeCard({
     setRevealed(true);
     setGraded(null);
     onSkip?.();
+  }
+
+  async function runNow() {
+    if (running || !code.trim()) return;
+    setRunning(true);
+    setRunResult(null);
+    const result = await runCode(challenge.language, code);
+    setRunning(false);
+    setRunResult(result);
   }
 
   const showsOptions =
@@ -134,6 +146,21 @@ export function ChallengeCard({
             disabled={revealed || (graded?.pass ?? false)}
           />
 
+          {running && <p className="grading">▶ Running…</p>}
+
+          {runResult && (
+            <div className="run-output">
+              <div className="run-label">Output</div>
+              {runResult.output && <pre className="run-pre">{runResult.output}</pre>}
+              {runResult.error && (
+                <pre className="run-pre err">{runResult.error}</pre>
+              )}
+              {!runResult.output && !runResult.error && (
+                <pre className="run-pre muted">(no output)</pre>
+              )}
+            </div>
+          )}
+
           {grading && <p className="grading">🤖 Checking your code…</p>}
 
           {graded && (
@@ -149,10 +176,19 @@ export function ChallengeCard({
 
           {!graded?.pass && !revealed && (
             <div className="open-actions">
+              {canRun(challenge.language) && (
+                <button
+                  className="ghost"
+                  onClick={runNow}
+                  disabled={running || grading || !code.trim()}
+                >
+                  ▶ Run
+                </button>
+              )}
               <button
                 className="check-btn"
                 onClick={submitCode}
-                disabled={grading || !code.trim()}
+                disabled={grading || running || !code.trim()}
               >
                 {graded ? "Resubmit" : "Submit"}
               </button>

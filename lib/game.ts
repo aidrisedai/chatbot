@@ -54,6 +54,8 @@ export type GameState = {
   muted: boolean;
   adventure: { cleared: string[] };
   potions: number;
+  spells: { owned: string[]; levels: Record<string, number> };
+  achievements: string[];
 };
 
 export const DAILY_GOALS: {
@@ -93,6 +95,8 @@ export function defaultState(): GameState {
     muted: false,
     adventure: { cleared: [] },
     potions: 0,
+    spells: { owned: ["spark", "frost"], levels: {} },
+    achievements: [],
   };
 }
 
@@ -180,5 +184,7 @@ export function applyAnswer(
     muted: state.muted,
     adventure: state.adventure,
     potions: state.potions,
+    spells: state.spells,
+    achievements: state.achievements,
   };
 }

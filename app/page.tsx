@@ -7,7 +7,14 @@ import { DailyGoals } from "@/components/DailyGoals";
 import { Avatar } from "@/components/Avatar";
 import { Closet } from "@/components/Closet";
 import { Adventure } from "@/components/Adventure";
-import { POTION_COST } from "@/lib/adventure";
+import { Badges } from "@/components/Badges";
+import {
+  POTION_COST,
+  ATTACKS,
+  SPELL_MAX_LEVEL,
+  spellUpgradeCost,
+} from "@/lib/adventure";
+import { pendingAchievements } from "@/lib/achievements";
 import type { Challenge, GradeResult } from "@/lib/types";
 import { defaultAvatar, type AvatarItem } from "@/lib/avatar";
 import { playSound, setMuted } from "@/lib/sound";
@@ -63,6 +70,8 @@ export default function Home() {
   const [shopOpen, setShopOpen] = useState(false);
   const [closetOpen, setClosetOpen] = useState(false);
   const [adventureOpen, setAdventureOpen] = useState(false);
+  const [badgesOpen, setBadgesOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   // Load saved state once.
   useEffect(() => {
@@ -75,6 +84,13 @@ export default function Home() {
           ...defaultState(),
           ...parsed,
           daily: ensureToday(parsed.daily),
+          spells:
+            parsed.spells && Array.isArray(parsed.spells.owned)
+              ? parsed.spells
+              : { owned: ["spark", "frost"], levels: {} },
+          achievements: Array.isArray(parsed.achievements)
+            ? parsed.achievements
+            : [],
           avatar: parsed.avatar
             ? {
                 equipped: { ...base.equipped, ...parsed.avatar.equipped },
@@ -95,6 +111,31 @@ export default function Home() {
   useEffect(() => {
     setMuted(state.muted);
   }, [state.muted]);
+
+  // Unlock any achievements whose conditions are now met.
+  useEffect(() => {
+    if (!hydrated) return;
+    const pending = pendingAchievements(state);
+    if (pending.length === 0) return;
+    const coins = pending.reduce((c, a) => c + a.reward, 0);
+    setState((s) => ({
+      ...s,
+      coins: s.coins + coins,
+      achievements: [...s.achievements, ...pending.map((a) => a.id)],
+    }));
+    setToast(
+      `🏅 ${pending[0].name}${pending.length > 1 ? ` +${pending.length - 1} more` : ""}`
+    );
+    playSound("levelUp");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, hydrated]);
+
+  // Auto-dismiss the toast.
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3200);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   // Persist on change.
   useEffect(() => {
@@ -316,6 +357,39 @@ export default function Home() {
     setState((s) => (s.potions > 0 ? { ...s, potions: s.potions - 1 } : s));
   }
 
+  function buySpell(id: string) {
+    const atk = ATTACKS.find((a) => a.id === id);
+    if (!atk) return;
+    setState((s) =>
+      s.spells.owned.includes(id) || s.coins < atk.cost
+        ? s
+        : {
+            ...s,
+            coins: s.coins - atk.cost,
+            spells: { ...s.spells, owned: [...s.spells.owned, id] },
+          }
+    );
+    playSound("buy");
+  }
+
+  function upgradeSpell(id: string) {
+    setState((s) => {
+      const level = s.spells.levels[id] || 0;
+      if (!s.spells.owned.includes(id) || level >= SPELL_MAX_LEVEL) return s;
+      const cost = spellUpgradeCost(level);
+      if (s.coins < cost) return s;
+      return {
+        ...s,
+        coins: s.coins - cost,
+        spells: {
+          ...s.spells,
+          levels: { ...s.spells.levels, [id]: level + 1 },
+        },
+      };
+    });
+    playSound("buy");
+  }
+
   function rewardCosmetic(id: string) {
     setState((s) =>
       s.avatar.owned.includes(id)
@@ -346,6 +420,12 @@ export default function Home() {
     />
   );
 
+  const badgesModal = badgesOpen && (
+    <Badges unlocked={state.achievements} onClose={() => setBadgesOpen(false)} />
+  );
+
+  const toastEl = toast && <div className="toast">{toast}</div>;
+
   function reviveFree() {
     if (!track) return;
     setState((s) => ({
@@ -362,16 +442,23 @@ export default function Home() {
   // ---- Adventure (RPG) mode ----
   if (adventureOpen) {
     return (
-      <Adventure
-        equipped={state.avatar.equipped}
-        cleared={state.adventure.cleared}
-        potions={state.potions}
-        onClearWorld={clearWorld}
-        onReward={rewardCoins}
-        onUsePotion={usePotion}
-        onRewardCosmetic={rewardCosmetic}
-        onExit={() => setAdventureOpen(false)}
-      />
+      <>
+        <Adventure
+          coins={state.coins}
+          equipped={state.avatar.equipped}
+          cleared={state.adventure.cleared}
+          potions={state.potions}
+          spells={state.spells}
+          onClearWorld={clearWorld}
+          onReward={rewardCoins}
+          onUsePotion={usePotion}
+          onRewardCosmetic={rewardCosmetic}
+          onBuySpell={buySpell}
+          onUpgradeSpell={upgradeSpell}
+          onExit={() => setAdventureOpen(false)}
+        />
+        {toastEl}
+      </>
     );
   }
 
@@ -394,6 +481,9 @@ export default function Home() {
             </button>
             <button className="ghost customize" onClick={() => setClosetOpen(true)}>
               🎨 Customize
+            </button>
+            <button className="ghost customize" onClick={() => setBadgesOpen(true)}>
+              🏅 Badges
             </button>
           </div>
 
@@ -430,6 +520,8 @@ export default function Home() {
           </div>
         </div>
         {closetModal}
+        {badgesModal}
+        {toastEl}
       </main>
     );
   }
@@ -536,6 +628,8 @@ export default function Home() {
       </footer>
 
       {closetModal}
+      {badgesModal}
+      {toastEl}
 
       {shopOpen && (
         <Shop

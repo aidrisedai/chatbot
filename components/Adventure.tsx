@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { ChallengeCard } from "@/components/ChallengeCard";
 import { Avatar } from "@/components/Avatar";
+import { SpellShop } from "@/components/SpellShop";
 import type { Challenge } from "@/lib/types";
 import type { AvatarCategory } from "@/lib/avatar";
 import { playSound } from "@/lib/sound";
@@ -17,6 +18,8 @@ import {
   BOSS_COINS,
   ATTACKS,
   POTION_HEAL,
+  spellDamage,
+  type Attack,
   type WorldDef,
 } from "@/lib/adventure";
 
@@ -47,22 +50,30 @@ function HpBar({ hp, max }: { hp: number; max: number }) {
 }
 
 export function Adventure({
+  coins,
   equipped,
   cleared,
   potions,
+  spells,
   onClearWorld,
   onReward,
   onUsePotion,
   onRewardCosmetic,
+  onBuySpell,
+  onUpgradeSpell,
   onExit,
 }: {
+  coins: number;
   equipped: Record<AvatarCategory, string>;
   cleared: string[];
   potions: number;
+  spells: { owned: string[]; levels: Record<string, number> };
   onClearWorld: (id: string) => void;
   onReward: (coins: number) => void;
   onUsePotion: () => void;
   onRewardCosmetic: (id: string) => void;
+  onBuySpell: (id: string) => void;
+  onUpgradeSpell: (id: string) => void;
   onExit: () => void;
 }) {
   const [phase, setPhase] = useState<Phase>("map");
@@ -81,6 +92,11 @@ export function Adventure({
   const [cooldowns, setCooldowns] = useState<Record<string, number>>({});
   const [armed, setArmed] = useState(ATTACKS[0].id);
   const [earnedReward, setEarnedReward] = useState<string | null>(null);
+  const [spellShopOpen, setSpellShopOpen] = useState(false);
+
+  // Only spells the player owns show up on the battle spell bar.
+  const ownedAttacks = ATTACKS.filter((a) => spells.owned.includes(a.id));
+  const spellLevel = (id: string) => spells.levels[id] || 0;
 
   const nextTurn = useCallback(
     async (w: WorldDef, seen: string[]) => {
@@ -156,8 +172,9 @@ export function Adventure({
     if (correct) {
       // Cast the armed spell (fall back to the basic one if it's recharging).
       const ready = (cooldowns[armed] || 0) <= 0;
-      const atk = (ready ? ATTACKS.find((a) => a.id === armed) : ATTACKS[0]) || ATTACKS[0];
-      const dmg = atk.dmg + streak * STREAK_DMG;
+      const atk: Attack =
+        (ready ? ATTACKS.find((a) => a.id === armed) : ATTACKS[0]) || ATTACKS[0];
+      const dmg = spellDamage(atk, spellLevel(atk.id)) + streak * STREAK_DMG;
       const newFoeHp = Math.max(0, foe.hp - dmg);
       setFoe((f) => (f ? { ...f, hp: newFoeHp } : f));
       setStreak((s) => s + 1);
@@ -400,9 +417,10 @@ export function Adventure({
       {battleMsg && <div className="battle-msg">{battleMsg}</div>}
 
       <div className="spellbar">
-        {ATTACKS.map((a) => {
+        {ownedAttacks.map((a) => {
           const cd = cooldowns[a.id] || 0;
           const isArmed = armed === a.id;
+          const dmg = spellDamage(a, spellLevel(a.id));
           return (
             <button
               key={a.id}
@@ -412,16 +430,27 @@ export function Adventure({
                 setArmed(a.id);
                 playSound("click");
               }}
-              title={`${a.name} · ${a.dmg} dmg · ${
+              title={`${a.name} · ${dmg} dmg · ${
                 a.cooldown === 0 ? "no cooldown" : `${a.cooldown}-turn cooldown`
               }`}
             >
               <span className="spell-emoji">{a.emoji}</span>
-              <span className="spell-dmg">{a.dmg}</span>
+              <span className="spell-dmg">{dmg}</span>
               {cd > 0 && <span className="spell-cd">{cd}</span>}
             </button>
           );
         })}
+        <button
+          className="spell shop"
+          onClick={() => {
+            setSpellShopOpen(true);
+            playSound("click");
+          }}
+          title="Spellbook"
+        >
+          <span className="spell-emoji">🔮</span>
+          <span className="spell-dmg">shop</span>
+        </button>
       </div>
 
       <div className="stage">
@@ -466,6 +495,17 @@ export function Adventure({
           🧪 {potions}
         </button>
       </div>
+
+      {spellShopOpen && (
+        <SpellShop
+          coins={coins}
+          owned={spells.owned}
+          levels={spells.levels}
+          onBuy={onBuySpell}
+          onUpgrade={onUpgradeSpell}
+          onClose={() => setSpellShopOpen(false)}
+        />
+      )}
     </main>
   );
 }
